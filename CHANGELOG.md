@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.0.1
+## Gens Load Fix
+- added --case-id $group to the gens load command
+- fixed the issue with memory requirements for the big process
+- homogenized between the production and the git versions
+
 ### Release date 
 	* version 2.0.0 on September 30 2022
 

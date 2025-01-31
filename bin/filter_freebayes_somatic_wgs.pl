@@ -27,7 +27,6 @@ while ( my $v = $vcf->next_var() ) {
 
     my( %likelihood, %gl_idx, %genotype, %altobs, %depth );
     my $status = "PASS";
-	
     for my $gt (@{$v->{GT}}) {
         my $type = "T";
         $type = "N" if $gt->{_sample_id} eq $N;
@@ -102,6 +101,8 @@ while ( my $v = $vcf->next_var() ) {
 
     vcfstr($v);
 }
+
+
 
 
 
