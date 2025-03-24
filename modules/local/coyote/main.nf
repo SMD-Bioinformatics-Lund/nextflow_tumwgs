@@ -3,7 +3,7 @@ process COYOTE {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf), file(importy)
+        tuple val(group), val(meta), file(vcf), file(importy), file (cnvjson)
 
     output:
         tuple val(group), file("*.coyote"),  emit: coyote_import
@@ -23,20 +23,10 @@ process COYOTE {
         def fusions = importy[0]
         def tumPlot = importy[1]
         def cnv = importy[2]
+        def coyote_Group = params.coyote_group.split('-')[0]
 
         """
-        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\ 
-            --group ${params.coyote_group} \\
-            --id ${process_group} \\
-            --vcf /access/${params.subdir}/vcf/${vcf} \\
-			--cnv /access/tumwgs/cnv/${cnv} \\
-            --transloc /access/tumwgs/vcf/${fusions} \\
-            --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} \\
-            --build 38 \\
-            --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} \\
-            --gens ${meta.id[tumor_idx]} \\
-			--cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
-
+        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/tumwgs/cnv/${cnv} --transloc /access/tumwgs/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
         """
 
     stub:
@@ -50,20 +40,10 @@ process COYOTE {
         def fusions = importy[0]
         def tumPlot = importy[1]
         def cnv = importy[2]
-
+        def coyote_Group = params.coyote_group.split('-')[0]
         """
-        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\ 
-            --group ${params.coyote_group} \\
-            --id ${process_group} \\
-            --vcf /access/${params.subdir}/vcf/${vcf} \\
-			--cnv /access/${params.subdir}/cnv/${cnv} \\
-            --transloc /access/${params.subdir}/vcf/${fusions} \\
-            --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} \\
-            --build 38 \\
-            --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} \\
-            --gens ${meta.id[tumor_idx]} \\
-			--cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
-
+        
+        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/${params.subdir}/cnv/${cnv} --transloc /access/${params.subdir}/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
         """
 }
 
@@ -72,7 +52,7 @@ process COYOTE_YAML {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf), file(importy)
+        tuple val(group), val(meta), file(vcf), file(importy),file (cnvjson)
 
     output:
         tuple val(group), file("*.coyote.yaml"), emit: coyote_import
@@ -89,7 +69,7 @@ process COYOTE_YAML {
         }
         def fusions = importy[0]
         def tumPlot = importy[1]
-        def cnv = importy[2]
+        def cnv     = cnvjson[0]
         
         """
         echo --- > ${process_group}.coyote.yaml
@@ -100,8 +80,8 @@ process COYOTE_YAML {
         echo clarity-pool-id: \\'${meta.clarity_pool_id[tumor_idx]}\\' >> ${process_group}.coyote.yaml
         echo genome_build: 38 >> ${process_group}.coyote.yaml
         echo vcf_files: /access/${params.subdir}/vcf/${vcf} >> ${process_group}.coyote.yaml
-        echo cnvprofile: /access/${params.subdir}/vcf/${vcf} >> ${process_group}.coyote.yaml
-        echo transloc: /access/${params.subdir}/vcf/${fusions} >> ${process_group}.coyote.yaml
+        echo cnvprofile: /access/${params.subdir}/cov/${tumPlot} >> ${process_group}.coyote.yaml
+        echo transloc: /access/${params.subdir}/manta/${fusions} >> ${process_group}.coyote.yaml
         echo cnv: /access/${params.subdir}/cnv/${cnv} >> ${process_group}.coyote.yaml
         """
     stub:
@@ -113,7 +93,7 @@ process COYOTE_YAML {
         }
         def fusions = importy[0]
         def tumPlot = importy[1]
-        def cnv = importy[2]
+        def cnv     = cnvjson[0]
         
         """
         echo --- > ${process_group}.coyote.yaml
@@ -124,8 +104,8 @@ process COYOTE_YAML {
         echo clarity-pool-id: \\'${meta.clarity_pool_id[tumor_idx]}\\' >> ${process_group}.coyote.yaml
         echo genome_build: 38 >> ${process_group}.coyote.yaml
         echo vcf_files: /access/${params.subdir}/vcf/${vcf} >> ${process_group}.coyote.yaml
-        echo cnvprofile: /access/${params.subdir}/vcf/${vcf} >> ${process_group}.coyote.yaml
-        echo transloc: /access/${params.subdir}/vcf/${fusions} >> ${process_group}.coyote.yaml
+        echo cnvprofile: /access/${params.subdir}/cov/${tumPlot} >> ${process_group}.coyote.yaml
+        echo transloc: /access/${params.subdir}/manta/${fusions} >> ${process_group}.coyote.yaml
         echo cnv: /access/${params.subdir}/cnv/${cnv} >> ${process_group}.coyote.yaml
         """
 }

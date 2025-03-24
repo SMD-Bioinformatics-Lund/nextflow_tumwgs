@@ -417,7 +417,7 @@ process DNASCOPE {
     label 'process_alot'
     label 'scratch'
     label 'stage'
-    tag '${meta.id}'
+    tag "${meta.id}"
 
     input:
         tuple val(group), val(meta), file(cram), file(crai), file(bai)

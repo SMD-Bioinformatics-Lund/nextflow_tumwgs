@@ -790,8 +790,8 @@ process FILTER_CNVS_PANEL {
         tuple val(group), val(meta), file(bed) 
 
     output:
-        tuple val(group), file("*.cnv.annotated.panel.bed"),            emit: vcf_panel
-        path "versions.yml",                                            emit: versions
+        tuple val(group), file("*.cnv.annotated.panel.bed"), file("*.cnv.annotated.panel.json"),            emit: vcf_panel
+        path "versions.yml",                                                                                emit: versions
 
     
     when:
@@ -804,6 +804,7 @@ process FILTER_CNVS_PANEL {
     def prefix = task.ext.prefix ?: "${meta.id[tumor_idx]}"
         """
         filter_with_panel_cnv.pl ${bed} ${args} > ${prefix}.cnv.annotated.panel.bed
+        cnv_json.py ${prefix}.cnv.annotated.panel.bed ${prefix}.cnv.annotated.panel.json
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -817,6 +818,7 @@ process FILTER_CNVS_PANEL {
     def prefix = task.ext.prefix ?: "${meta.id[tumor_idx]}"
         """
         touch ${prefix}.cnv.annotated.panel.bed
+        touch ${prefix}.cnv.annotated.panel.json
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

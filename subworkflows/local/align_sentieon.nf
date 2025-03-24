@@ -6,7 +6,6 @@ include { BAM_CRAM                      } from '../../modules/local/sentieon/mai
 include { MARKDUP                       } from '../../modules/local/sentieon/main'
 include { REALIGN_INDEL_BQSR            } from '../../modules/local/sentieon/main'
 include { CRAM_TO_BAM                   } from '../../modules/local/sentieon/main'
-include { SENTIEON_QC                   } from '../../modules/local/sentieon/main'
 
 workflow ALIGN_SENTIEON {
     take: 
@@ -35,13 +34,10 @@ workflow ALIGN_SENTIEON {
         CRAM_TO_BAM ( REALIGN_INDEL_BQSR.out.cram_bqsr )
         ch_versions = ch_versions.mix(CRAM_TO_BAM.out.versions)
         
-        SENTIEON_QC ( BAM_CRAM.out.cram_merged.join(MARKDUP.out.cram_metric, by :[0,1]))
-        ch_versions = ch_versions.mix(SENTIEON_QC.out.versions)
-
     emit:
-        bam_bqsr    =   CRAM_TO_BAM.out.bam_bqsr                    // channel: [ val(group), val(meta), file(bam), file(bai) ]
-        cram_bqsr   =   REALIGN_INDEL_BQSR.out.cram_varcall         // channel: [ val(group), val(meta), file(bam), file(bai), file(bqsr.table) ]
-        qc_out      =   SENTIEON_QC.out.qc_cdm                      // channel: [ val(group), val(meta), file(QC) ]
-        cram_dedup   =  REALIGN_INDEL_BQSR.out.cram_bqsr            // channel: [ val(group), val(meta), file(bam), file(bai)] 
-        versions    =   ch_versions             // channel: [ file(versions) ]
+        bam_bqsr        = CRAM_TO_BAM.out.bam_bqsr                    // channel: [ val(group), val(meta), file(bam), file(bai) ]
+        cram_bqsr       = REALIGN_INDEL_BQSR.out.cram_varcall         // channel: [ val(group), val(meta), file(bam), file(bai), file(bqsr.table) ]
+        cram_dedup      = REALIGN_INDEL_BQSR.out.cram_bqsr            // channel: [ val(group), val(meta), file(bam), file(bai)] 
+        dedup_metrics   = MARKDUP.out.cram_metric
+        versions        = ch_versions             // channel: [ file(versions) ]
 }
