@@ -836,8 +836,8 @@ process FILTER_FUSIONS_PANEL {
         tuple val(group), val(meta), file(vcf) 
 
     output:
-        tuple val(group),  file("*.manta.fusions.vcf"),                 emit: sv_panel
-        path "versions.yml",                                            emit: versions
+        tuple val(group), val(meta), file("*.manta.fusions.vcf"),               emit: sv_panel
+        path "versions.yml",                                                    emit: versions
 
     
     when:
@@ -869,7 +869,6 @@ process FILTER_FUSIONS_PANEL {
         END_VERSIONS
         """
 }
-
 
 process FIX_VEP {
     label "process_single"

@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 		- Added the Structural variants and tandem SV analysis in gene fusion identification
 		- Fixed the new gens link for coyote
 
-
 ### Release date 
 	* version 2.0.0 on September 30 2022
 
