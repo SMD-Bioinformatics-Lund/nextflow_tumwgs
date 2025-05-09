@@ -11,7 +11,8 @@ include { AGGREGATE_VCFS           } from '../../modules/local/concatenate_vcfs/
 workflow SNV_CALLING {
     take: 
         bam_bqsr         // channel: [mandatory] [ val(group), val(meta), file("umi.bam"), file("umi.bam.bai"), file(bqsr) ]
-        cram_bqsr       // channel: [mandatory] [ val(group), val(meta), file("dedup.bam"), file("dedup.bam.bai") ]
+        cram_dedup       // channel: [mandatory] [ val(group), val(meta), file("dedup.bam"), file("dedup.bam.bai") ]
+        cram_bqsr
         beds            // channel: [mandatory] [ file(bed) ]
         meta            // channel: [mandatory] [ [sample_id, group, sex, phenotype, paternal_id, maternal_id, case_id] ]
     main:
@@ -24,9 +25,10 @@ workflow SNV_CALLING {
 
         VARDICT ( bam_bqsr, beds)
         ch_versions         = ch_versions.mix(VARDICT.out.versions.first())
-
-       // TNSCOPE ( cram_bqsr, beds)
-       // ch_versions         = ch_versions.mix(TNSCOPE.out.versions.first())
+        
+        cram_bqsr.view()
+        TNSCOPE ( cram_bqsr ) 
+        ch_versions         = ch_versions.mix(TNSCOPE.out.versions.first())
 
         // Prepare vcf parts for concatenation //
         vcfparts_freebayes  = FREEBAYES.out.vcfparts_freebayes.groupTuple(by:[0,1])
@@ -46,13 +48,14 @@ workflow SNV_CALLING {
         AGGREGATE_VCFS.out.vcf_concat.view()
         ch_versions         = ch_versions.mix(AGGREGATE_VCFS.out.versions.first())
 
-        DNASCOPE { cram_bqsr.groupTuple(by:[0,1])}
+        DNASCOPE { cram_dedup.groupTuple(by:[0,1])}
         ch_versions         = ch_versions.mix(DNASCOPE.out.versions)
 
     emit:
         concat_vcfs     =   CONCATENATE_VCFS.out.concatenated_vcfs  // channel: [ val(group), val(vc), file(vcf.gz) ]
         agg_vcf         =   AGGREGATE_VCFS.out.vcf_concat           // channel: [ val(group), val(meta), file(agg.vcf) ]
         dnascope_vcf    =   DNASCOPE.out.dnascope_vcf               // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
+        tnscope_vcf     =   TNSCOPE.out.tnscope_vcf                // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
         versions        =   ch_versions                             // channel: [ file(versions) ]
 
 }

@@ -35,9 +35,11 @@ workflow SV_CALLING {
         FILTER_FUSIONS_PANEL { SNPEFF.out.snpeff_vcf }
         ch_versions = ch_versions.mix( FILTER_FUSIONS_PANEL.out.versions)
 
-        ch_cmdfusion = FILTER_FUSIONS_PANEL.out.sv_panel.combine(SNPEFF_SV_ANN.out.snpeff_CMD)
-        ch_cmdfusion.view()
-        COMBINE_FUSIONS { ch_cmdfusion }
+        //ch_cmdfusion = FILTER_FUSIONS_PANEL.out.sv_panel.combine(SNPEFF_SV_ANN.out.snpeff_CMD)
+        //ch_cmdfusion.view()
+        //COMBINE_FUSIONS { ch_cmdfusion }
+
+        COMBINE_FUSIONS  ( FILTER_FUSIONS_PANEL.out.sv_panel, SNPEFF_SV_ANN.out.snpeff_BND_TANDEM )
         ch_versions = ch_versions.mix( COMBINE_FUSIONS.out.versions)
 
     emit:

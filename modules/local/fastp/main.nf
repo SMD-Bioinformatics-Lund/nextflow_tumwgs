@@ -5,6 +5,7 @@ process FASTP {
     label 'stage'
     tag "${meta.id}"
 
+
     input:
         tuple val(group), val(meta), file(r1), file(r2)
 

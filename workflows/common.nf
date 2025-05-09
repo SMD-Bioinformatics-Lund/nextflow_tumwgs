@@ -62,6 +62,7 @@ workflow SWGP_COMMON {
     SNV_CALLING ( 
         ch_mapped.bam_bqsr.groupTuple(),
         ch_mapped.cram_dedup,
+        ch_mapped.cram_bqsr.groupTuple(),
         ch_beds,
         CHECK_INPUT.out.meta,
     )

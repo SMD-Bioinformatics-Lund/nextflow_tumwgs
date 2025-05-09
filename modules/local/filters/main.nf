@@ -804,7 +804,7 @@ process FILTER_CNVS_PANEL {
     def prefix = task.ext.prefix ?: "${meta.id[tumor_idx]}"
         """
         filter_with_panel_cnv.pl ${bed} ${args} > ${prefix}.cnv.annotated.panel.bed
-        cnv_json.py ${prefix}.cnv.annotated.panel.bed ${prefix}.cnv.annotated.panel.json
+        cnv_json.py --bed ${prefix}.cnv.annotated.panel.bed  --json ${prefix}.cnv.annotated.panel.json
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

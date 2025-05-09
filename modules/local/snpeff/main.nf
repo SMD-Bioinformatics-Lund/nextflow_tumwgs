@@ -51,9 +51,8 @@ process SNPEFF_SV_ANN {
         tuple val(group), val(meta), file(vcf)
 
     output:
-        tuple val(group), val(meta), file("*.BND.annotated.vcf"),file("*.TANDEM.SV_annotated.vcf"), emit: snpeff_BND_TANDEM
-        path "*.CMD.selected.txt",                                                          emit: snpeff_CMD
-        path "versions.yml",                                                                        emit: versions
+        tuple val(group), val(meta), file("*.BND.annotated.vcf"), file("*.TANDEM.SV_annotated.vcf"),    emit: snpeff_BND_TANDEM
+        path "versions.yml",                                                                            emit: versions
     
     when:
         task.ext.when == null || task.ext.when
@@ -70,17 +69,8 @@ process SNPEFF_SV_ANN {
         """
         snpEff -Xmx${avail_mem}M $args ${vcf} > ${prefix}.SV.annotated.vcf
         grep -e '^#' -e 'MantaBND:' ${prefix}.SV.annotated.vcf >  ${prefix}.BND.annotated.vcf
-        grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf  | grep -e '^#' -e 'MantaINV:' >  ${prefix}.INV.annotated.vcf
+        grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf | grep -e '^#' -e 'MantaINV:' >  ${prefix}.INV.annotated.vcf
         grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf | grep -v 'MantaINV:' | grep -e '^#' -e 'TANDEM' >  ${prefix}.TANDEM.SV_annotated.vcf
-
-        grep -ve '^#' ${prefix}.BND.annotated.vcf |grep CMD > CMD_fusion.txt
-        grep -ve '^#' ${prefix}.TANDEM.SV_annotated.vcf |grep BRAF |less -Sx20 >> CMD_fusion.txt
-        
-        awk -F '\t' '{
-            OFS="\\t";
-            print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$(NF-3)";PANEL=fusion|somatic|both", \$9, \$10, \$11
-        }' CMD_fusion.txt >  ${prefix}.CMD.selected.txt
-
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -94,7 +84,7 @@ process SNPEFF_SV_ANN {
         """
         touch ${prefix}.BND.annotated.vcf
         touch ${prefix}.TANDEM.SV_annotated.vcf
-        touch  ${prefix}.CMD.selected.txt
+
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -170,7 +160,8 @@ process COMBINE_FUSIONS {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf), file(cmdfusion)
+        tuple val(group), val(meta), file(vcf)
+        tuple val(group), val(meta), file(bnd),file(tandem)
 
     output:
         tuple val(group), val(meta), file("*.final.fusions.vcf"),               emit: sv_CMD
@@ -183,7 +174,17 @@ process COMBINE_FUSIONS {
     def args   = task.ext.args   ?: ''
     def prefix = task.ext.prefix ?: "${group}"
         """
-        cat ${vcf} ${cmdfusion} > a.vcf
+        grep -ve '^#' ${bnd} | grep 'CMD' > a.txt || true
+        grep -ve '^#' ${tandem} | grep 'BRAF' > b.txt || true
+        cat a.txt b.txt > CMD_fusion.txt
+
+        if [[ -s CMD_fusion.txt ]]; then
+                awk -F "\\t" 'BEGIN { OFS="\\t" } { print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$(NF-3) ";PANEL=fusion|somatic|both", \$9, \$10, \$11 }' CMD_fusion.txt > Selected.txt
+        else
+            touch Selected.txt
+        fi
+
+        cat ${vcf} Selected.txt > a.vcf        
         echo '##INFO=<ID=PANEL,Number=1,Type=String,Description="Panel origin of the variant">' > extra_header.txt
         bcftools annotate -h extra_header.txt a.vcf ${args} fixed.vcf
         bcftools sort fixed.vcf -o ${prefix}.final.fusions.vcf	
@@ -191,8 +192,9 @@ process COMBINE_FUSIONS {
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-        END_VERSIONS
+        END_VERSIONS 
         """
+
     stub:
     def args   = task.ext.args   ?: ''
     def prefix = task.ext.prefix ?: "${group}"
