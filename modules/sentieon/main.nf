@@ -17,7 +17,7 @@ process COPY_FASTQ {
 process BWA_ALIGN_SHARDED {
 	tag "$shard $id"
 	label "process_high"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
     input:
 		val(K_size)
@@ -45,7 +45,7 @@ process BWA_ALIGN_SHARDED {
 
 process BWA_MERGE_SHARDS {
 	tag "$id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 
 	input: 
@@ -69,7 +69,7 @@ process BWA_MERGE_SHARDS {
 
 process DELETE_FASTQ {
 	tag "$id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_low"
 	
 	input:
@@ -86,7 +86,7 @@ process DELETE_FASTQ {
 
 process BAM_CRAM_ALL {
 	tag "$id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 
 	input: 
@@ -111,7 +111,7 @@ process BAM_CRAM_ALL {
 
 process LOCUS_COLLECTOR {
 	tag "$shard_name $id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 	maxErrors 5
 
@@ -135,7 +135,7 @@ process LOCUS_COLLECTOR {
 // This is the bottle-neck for the process completeion 
 process DEDUP {
 	tag "$shard_name $id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 
 	input:
@@ -167,7 +167,7 @@ process DEDUP {
 
 process DEDUP_METRICS_MERGE {
 	tag "$id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
 	input:
 		tuple	val(id), path(dedup)
@@ -182,11 +182,8 @@ process DEDUP_METRICS_MERGE {
 
 process SENTIEON_QC {
 	tag "$id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
-	publishDir "$params.outdir/$params.subdir/qc", 
-				mode: 'copy', 
-				overwrite: 'true'
 	cache 'deep'
 	time '2h'
 
@@ -194,8 +191,16 @@ process SENTIEON_QC {
 		path(params.genome_file)
 		tuple	val(id), path(cram), path(crai), path(bai), path(dedup)
 
-	output:
-		tuple	val(id), path("${id}.QC")
+	output:	tuple ( 
+					val(id),
+					path("mq_metrics.txt"),
+					path("qd_metrics.txt"),
+					path("gc_summary.txt"),
+					path("gc_metrics.txt"),
+					path("aln_metrics.txt"),
+					path("is_metrics.txt"),
+					path("wgs_metrics.txt")
+				)
 
 	"""
 	sentieon driver \
@@ -208,13 +213,40 @@ process SENTIEON_QC {
 		--algo AlignmentStat aln_metrics.txt \
 		--algo InsertSizeMetricAlgo is_metrics.txt \
 		--algo WgsMetricsAlgo wgs_metrics.txt
-	qc_sentieon.pl ${id} wgs > ${id}.QC
 	"""
 }
 
+process COLLECT_QC {
+	tag "$id"
+	label "process_medium"
+	publishDir "$params.outdir/$params.subdir/qc", 
+				mode: 'copy', 
+				overwrite: 'true'
+
+	input:	tuple ( 
+					val(id),
+					path("mq_metrics.txt"),
+					path("qd_metrics.txt"),
+					path("gc_summary.txt"),
+					path("gc_metrics.txt"),
+					path("aln_metrics.txt"),
+					path("is_metrics.txt"),
+					path("wgs_metrics.txt")
+				)
+
+	output:
+		tuple	val(id), path("${id}.QC")
+	
+	"""
+	qc_sentieon.pl ${id} wgs > ${id}.QC
+	"""
+
+}
+
+
 process BQSR {
 	tag "$shard_name $id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 	cache 'deep'
 	errorStrategy 'retry'
@@ -275,7 +307,7 @@ process BQSR {
 process MERGE_BQSR {
 	tag "$id"
 	label "process_low"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
 	input:
 		tuple val(id), path(tables) 
@@ -294,7 +326,7 @@ process MERGE_BQSR {
 process MERGE_DEDUP_CRAM {
 	tag "$id"
 	label "process_low"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	publishDir "$params.outdir/$params.subdir/bam",
 				mode: 'copy',
 				overwrite: 'true'
@@ -305,6 +337,7 @@ process MERGE_DEDUP_CRAM {
 
 	output:
 		tuple val(id), path("${id}_merged_dedup.cram"), path("${id}_merged_dedup.cram.crai"), path("${id}_merged_dedup.cram.bai")
+		
 
 	script:
 		cram = crams.sort(false) { a, b -> a.getBaseName().tokenize("_")[0] as Integer <=> b.getBaseName().tokenize("_")[0] as Integer } .join(' -i ')
@@ -315,6 +348,25 @@ process MERGE_DEDUP_CRAM {
 		-i ${cram} \
 		--cram_write_options version=3.0 \
 		-o ${id}_merged_dedup.cram --mergemode 10
+	"""
+}
+
+process CRAM_TO_BAM {
+	tag "$id"
+	label "process_high"
+	container "${params.container_sentieon}"
+
+	input:
+		path(params.genome_file)
+		tuple 	val(id), path(cram), path(crai), path(bai)
+
+	output:
+		tuple val(id), path("${id}_merged_dedup.bam"), path("${id}_merged_dedup.bam.bai")
+		
+	script:
+	"""
+	samtools view -b  -T ${params.genome_file} -o ${id}_merged_dedup.bam -@ ${task.cpus} ${cram}
+	samtools index -@ ${task.cpus} ${id}_merged_dedup.bam
 	"""
 }
 
@@ -343,7 +395,7 @@ process QC_TO_CDM {
 
 process TNSCOPE {
 	tag "$shard_name $smpl_id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 	errorStrategy 'retry'
 	maxErrors 5
@@ -449,7 +501,7 @@ process TNSCOPE {
 
 process MERGE_VCF {
 	tag "$id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 
 	input:
@@ -473,7 +525,7 @@ process MERGE_VCF {
 
 process DNASCOPE_TUM {
 	tag "$group $smpl_id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 	errorStrategy 'retry'
 	maxErrors 5
@@ -517,7 +569,7 @@ process DNASCOPE_TUM {
 
 process DNASCOPE_NOR {
 	tag "$group $smpl_id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 	errorStrategy 'retry'
 	maxErrors 5
@@ -778,6 +830,7 @@ process  SPLIT_NORMALIZE {
 
 
 	"""
+	tabix -f ${vcf}
 	vcfbreakmulti ${vcf} > ${group}.multibreak.vcf
 	bcftools norm -m-both -c w -O v -f  ${params.genome_file} -o ${group}.norm.vcf ${group}.multibreak.vcf
 	vcfstreamsort ${group}.norm.vcf | vcfuniq > ${group}.norm.uniq.vcf
@@ -1236,7 +1289,7 @@ process GENERATE_GENS_DATA {
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 
-	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id}_${assay} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
 
@@ -1271,7 +1324,7 @@ process GENERATE_GENS_DATA_NOR {
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 	
-	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id}_${assay} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
 
@@ -1294,7 +1347,8 @@ process COYOTE {
 	if( lims_id.size() >= 2 ) {
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
-
+		
+		assay1 = assay[0]
 		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
 		// def gens_normal = ${sampleID[normal_idx]} + ${assay}
 
@@ -1307,14 +1361,15 @@ process COYOTE {
 			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
 			--clarity-sample-id ${lims_id[tumor_idx]} \\
 			--build 38 \\
-        	--gens ${sampleID[tumor_idx]} \\
-			--gensNorm ${sampleID[normal_idx]} \\
+        	--gens ${sampleID[tumor_idx]}_${assay1} \\
+			--gensNorm ${sampleID[normal_idx]}_${assay1} \\
 			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
 		"""
 	}
 	else {
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 
+		assay1 = assay[0] 
 		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
 		
 		"""
@@ -1326,7 +1381,7 @@ process COYOTE {
 			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
 			--clarity-sample-id ${lims_id[tumor_idx]} \\
 			--build 38 \\
-        	--gens ${sampleID[tumor_idx]} \\
+        	--gens ${sampleID[tumor_idx]}_${assay} \\
 			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
 
 		"""
