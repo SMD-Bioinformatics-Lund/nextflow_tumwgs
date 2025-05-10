@@ -231,7 +231,8 @@ process COLLECT_QC {
 					path("gc_metrics.txt"),
 					path("aln_metrics.txt"),
 					path("is_metrics.txt"),
-					path("wgs_metrics.txt")
+					path("wgs_metrics.txt"),
+					path(dedup)
 				)
 
 	output:
@@ -1289,7 +1290,7 @@ process GENERATE_GENS_DATA {
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 
-	echo "gens load sample --sample-id ${id}_${assay} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
 
@@ -1324,9 +1325,10 @@ process GENERATE_GENS_DATA_NOR {
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 	
-	echo "gens load sample --sample-id ${id}_${assay} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
+
 
 process COYOTE {
 	tag "$group"
@@ -1347,8 +1349,7 @@ process COYOTE {
 	if( lims_id.size() >= 2 ) {
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
-		
-		assay1 = assay[0]
+
 		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
 		// def gens_normal = ${sampleID[normal_idx]} + ${assay}
 
@@ -1361,15 +1362,14 @@ process COYOTE {
 			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
 			--clarity-sample-id ${lims_id[tumor_idx]} \\
 			--build 38 \\
-        	--gens ${sampleID[tumor_idx]}_${assay1} \\
-			--gensNorm ${sampleID[normal_idx]}_${assay1} \\
+        	--gens ${sampleID[tumor_idx]} \\
+			--gensNorm ${sampleID[normal_idx]} \\
 			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
 		"""
 	}
 	else {
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 
-		assay1 = assay[0] 
 		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
 		
 		"""
@@ -1381,7 +1381,7 @@ process COYOTE {
 			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
 			--clarity-sample-id ${lims_id[tumor_idx]} \\
 			--build 38 \\
-        	--gens ${sampleID[tumor_idx]}_${assay} \\
+        	--gens ${sampleID[tumor_idx]} \\
 			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
 
 		"""

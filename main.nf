@@ -125,7 +125,7 @@ workflow sentieon_workflow {
 
         SENTIEON_QC.out.view()
 
-        COLLECT_QC (SENTIEON_QC.out)
+        COLLECT_QC (SENTIEON_QC.out.join(DEDUP_METRICS_MERGE.out))
 
         bqsrInput = DEDUP.out[0].groupTuple().combine(shards)
         BQSR (  genomeShards,
