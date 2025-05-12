@@ -4,7 +4,8 @@
 ## Gens Load Fix
 - Uppdated the Sentieon version to 202308.03
 - Seperated QC module to calculation and collection module
-- Trannel profile was changed to more appropriate test 
+- Trannel profile was changed to more appropriate test
+- Test profile was update  
 
 
 ## v2.0.1
