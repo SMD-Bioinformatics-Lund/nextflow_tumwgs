@@ -48,6 +48,7 @@ include {   COPY_FASTQ;
             DEDUP;
             DEDUP_METRICS_MERGE;
             SENTIEON_QC;
+            COLLECT_QC;
             BQSR;
             MERGE_BQSR;
             MERGE_DEDUP_CRAM;
@@ -122,6 +123,10 @@ workflow sentieon_workflow {
         SENTIEON_QC (   params.genome_file, 
                         BAM_CRAM_ALL.out.join(DEDUP_METRICS_MERGE.out))
 
+        SENTIEON_QC.out.view()
+
+        COLLECT_QC (SENTIEON_QC.out.join(DEDUP_METRICS_MERGE.out))
+
         bqsrInput = DEDUP.out[0].groupTuple().combine(shards)
         BQSR (  genomeShards,
                 params.genome_file,
@@ -137,7 +142,7 @@ workflow sentieon_workflow {
         cram = MERGE_DEDUP_CRAM.out
         dedup = DEDUP.out[0]
         bqsr = MERGE_BQSR.out
-        sentieonqc = SENTIEON_QC.out
+        sentieonqc = COLLECT_QC.out
 
 }
 
