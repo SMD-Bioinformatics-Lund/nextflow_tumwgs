@@ -8,7 +8,7 @@ process TNSCOPE {
         tuple val(group), val(meta), file(cram), file(crai), file(bai), file(bqsr)
 
     output:
-        tuple val(group), val(meta), file("${meta.id[tumor_idx]}.tnscope.vcf.gz"), file("${meta.id[tumor_idx]}.tnscope.vcf.tbi"), emit: tnscope_vcf
+        tuple val(group), val(meta), file("${meta.id[tumor_idx]}.tnscope.vcf.gz"), emit: tnscope_vcf
         path "versions.yml", emit: versions
     
     when:
@@ -342,7 +342,15 @@ process SENTIEON_QC {
         tuple val(group), val(meta), file(cram), file(crai), file(bai), file(dedup)
 
     output:
-        tuple val(group), val(meta), file("*_${meta.type}.QC"),                        emit: qc_cdm
+        tuple   val(group), 
+                val(meta), 
+                path("mq_metrics.txt"),
+				path("qd_metrics.txt"),
+                path("gc_summary.txt"),
+                path("gc_metrics.txt"),
+                path("aln_metrics.txt"),
+                path("is_metrics.txt"),
+                path("wgs_metrics.txt"),                                               emit: qc
         path "versions.yml",                                                           emit: versions
 
     when:
@@ -357,9 +365,7 @@ process SENTIEON_QC {
             --algo MeanQualityByCycle mq_metrics.txt --algo QualDistribution qd_metrics.txt \\
             --algo GCBias --summary gc_summary.txt gc_metrics.txt --algo AlignmentStat aln_metrics.txt \\
             --algo InsertSizeMetricAlgo is_metrics.txt \\
-            --algo WgsMetricsAlgo wgs_metrics
-            
-        qc_sentieon.pl ${meta.id}_${meta.type} wgs > ${prefix}_${meta.type}.QC
+            --algo WgsMetricsAlgo wgs_metrics.txt
         
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -370,6 +376,13 @@ process SENTIEON_QC {
     stub:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
+        touch mq_metrics.txt
+        touch qd_metrics.txt   
+        touch gc_summary.txt    
+        touch gc_metrics.txt    
+        touch aln_metrics.txt   
+        touch is_metrics.txt    
+        touch wgs_metrics.txt
         touch ${prefix}_${meta.type}.QC
 
         cat <<-END_VERSIONS > versions.yml
@@ -378,6 +391,45 @@ process SENTIEON_QC {
         END_VERSIONS
         """
 }
+
+process COLLECT_QC {    
+    label 'process_medium'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta), path(mq), path(qd), path(gc), path(aln), path(is), path(wgs)
+
+    output:
+        tuple val(group), val(meta), file("*_${meta.type}.QC"),                        emit: qc_cdm
+        path "versions.yml",                                                           emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+    
+    script:
+        def prefix  = task.ext.prefix   ?: "${meta.id}"
+        """
+        qc_sentieon.pl ${meta.id}_${meta.type} wgs > ${prefix}_${meta.type}.QC
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+    
+    stub:
+        def prefix  = task.ext.prefix   ?: "${meta.id}"
+        """
+        touch ${meta.id}_${meta.type}.QC
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+
+}
+
 
 process CRAM_TO_BAM {
     label 'process_alot'
