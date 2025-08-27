@@ -27,7 +27,7 @@ process COYOTE {
         def sample_subpanel = params.coyote_group.split('-')[1]
 
         """
-        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group} --subpanel ${sample_subpanel} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/tumwgs/cnv/${cnv} --transloc /access/tumwgs/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
+        echo "/data/bnf/dev/saile/other/prj/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group} --subpanel ${sample_subpanel} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/tumwgs/cnv/${cnv} --transloc /access/tumwgs/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
         """
 
     stub:
@@ -45,7 +45,7 @@ process COYOTE {
         def sample_subpanel = params.coyote_group.split('-')[1]
         """
         
-        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group}  --subpanel ${sample_subpanel} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/${params.subdir}/cnv/${cnv} --transloc /access/${params.subdir}/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
+        echo "/data/bnf/dev/saile/other/prj/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group}  --subpanel ${sample_subpanel} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/${params.subdir}/cnv/${cnv} --transloc /access/${params.subdir}/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
         """
 }
 
