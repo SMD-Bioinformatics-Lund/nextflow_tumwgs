@@ -51,8 +51,8 @@ process SNPEFF_SV_ANN {
         tuple val(group), val(meta), file(vcf)
 
     output:
-        tuple val(group), val(meta), file("*.BND.annotated.vcf"), file("*.TANDEM.SV_annotated.vcf"),    emit: snpeff_BND_TANDEM
-        path "versions.yml",                                                                            emit: versions
+        tuple val(group), val(meta), file("*.BND.annotated.vcf"), file("*.TANDEM.INS.DEL.SV_annotated.vcf"),    emit: snpeff_BND_TANDEM
+        path "versions.yml",                                                                                    emit: versions
     
     when:
         task.ext.when == null || task.ext.when
@@ -70,7 +70,7 @@ process SNPEFF_SV_ANN {
         snpEff -Xmx${avail_mem}M $args ${vcf} > ${prefix}.SV.annotated.vcf
         grep -e '^#' -e 'MantaBND:' ${prefix}.SV.annotated.vcf >  ${prefix}.BND.annotated.vcf
         grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf | grep -e '^#' -e 'MantaINV:' >  ${prefix}.INV.annotated.vcf
-        grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf | grep -v 'MantaINV:' | grep -e '^#' -e 'TANDEM' >  ${prefix}.TANDEM.SV_annotated.vcf
+        grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf | grep -v 'MantaINV:'  >  ${prefix}.TANDEM.INS.DEL.SV_annotated.vcf
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -175,7 +175,7 @@ process COMBINE_FUSIONS {
     def prefix = task.ext.prefix ?: "${group}"
         """
         grep -ve '^#' ${bnd} | grep 'CMD' > a.txt || true
-        grep -ve '^#' ${tandem} | grep 'BRAF' > b.txt || true
+        grep -ve '^#' ${tandem} | grep -f ${params.FUSIONS_CNV} > b.txt || true
         cat a.txt b.txt > CMD_fusion.txt
 
         if [[ -s CMD_fusion.txt ]]; then
