@@ -164,7 +164,7 @@ process COMBINE_FUSIONS {
         tuple val(group), val(meta), file(bnd),file(tandem)
 
     output:
-        tuple val(group), val(meta), file("*.final.fusions.vcf"),               emit: sv_CMD
+        tuple val(group), file("*.final.fusions.vcf"),                          emit: sv_CMD
         path "versions.yml",                                                    emit: versions
 
     when:

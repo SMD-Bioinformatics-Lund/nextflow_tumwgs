@@ -11,6 +11,8 @@ workflow ADD_TO_DB {
 
     main:
         optional = cnv.mix(fusions,tum_plot).groupTuple()
+        // optional.view()
+        // vcf.view()
         vcf.join(optional).view()
         COYOTE { vcf.join(optional) }
         COYOTE_YAML { vcf.join(optional) }
@@ -19,4 +21,3 @@ workflow ADD_TO_DB {
         coyotedone = COYOTE.out.coyote_import        // channel: [ val(group), file(coyote) ]
         
 }
-

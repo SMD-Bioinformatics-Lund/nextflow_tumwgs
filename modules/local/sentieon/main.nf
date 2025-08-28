@@ -397,7 +397,7 @@ process COLLECT_QC {
     tag "${meta.id}"
 
     input:
-        tuple val(group), val(meta), path(mq), path(qd), path(gc), path(aln), path(is), path(wgs)
+        tuple val(group), val(meta), path(mq), path(qd), path(gc), path(gc_metrices), path(aln), path(is), path(wgs)
 
     output:
         tuple val(group), val(meta), file("*_${meta.type}.QC"),                        emit: qc_cdm
