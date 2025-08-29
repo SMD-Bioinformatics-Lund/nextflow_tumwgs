@@ -63,16 +63,27 @@ process TNSCOPE {
             """ 
         }
 
-    stub:
-        def out_vcf = meta.id+"."+meta.type+".tnscope.vcf.gz"
-        """
-        touch $out_vcf
 
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-        END_VERSIONS
-        """
+    stub:
+
+        if (meta.id.size() >= 2 ) {
+            tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+            normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            out_vcf = "${meta.id[tumor_idx]}.tnscope.vcf.gz"
+        
+            """
+            touch ${out_vcf}
+
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
+            """
+        }
+        else {
+
+        }
+
 }
 
 process BWA_ALIGN_SHARD {

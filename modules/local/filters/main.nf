@@ -790,8 +790,9 @@ process FILTER_CNVS_PANEL {
         tuple val(group), val(meta), file(bed) 
 
     output:
-        tuple val(group), file("*.cnv.annotated.panel.bed"), file("*.cnv.annotated.panel.json"),            emit: vcf_panel
-        path "versions.yml",                                                                                emit: versions
+        tuple val(group), file("*.cnv.annotated.panel.bed"),             emit: vcf_panel_bed
+        tuple val(group), file("*.cnv.annotated.panel.json"),            emit: vcf_panel_json   
+        path "versions.yml",                                             emit: versions
 
     
     when:

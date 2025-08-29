@@ -41,7 +41,8 @@ workflow CNV_CALLING {
         tum_plot    =   GATKCOV_CALL.out.gatkcov_plot
         norm_plot   =   GATKCOV_CALL_GERMLINE.out.gatkcov_germlline_plot
         count       =   GATKCOV_COUNT.out.gatk_count
-        vcf         =   FILTER_CNVS_PANEL.out.vcf_panel
+        bed         =   FILTER_CNVS_PANEL.out.vcf_panel_bed
+        json        =   FILTER_CNVS_PANEL.out.vcf_panel_json
         versions    =   ch_versions                     // channel: [ file(versions) ]
 
 }

@@ -3,7 +3,7 @@ process COYOTE {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf), file(importy),file (cnvjson)
+        tuple val(group), val(meta), file(vcf), file(importy)
 
     output:
         tuple val(group), file("*.coyote"),  emit: coyote_import
@@ -19,12 +19,15 @@ process COYOTE {
             process_group = group + '_single'
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         }
+        cnvplot_idx    = importy.findIndexOf{ it =~ 'modeled.png' }
+        cnvseg_idx     = importy.findIndexOf{ it =~ 'panel' }
+        fusions_idx    = importy.findIndexOf{ it =~ 'fusions' }
 
-        def fusions = importy[2]
-        def tumPlot = importy[0]
-        def cnv = importy[1]
-        def coyote_Group = params.coyote_group.split('-')[0]
-        def sample_subpanel = params.coyote_group.split('-')[1]
+        fusions  = importy[fusions_idx]
+        tumPlot  = importy[cnvplot_idx]
+        cnv      = importy[cnvseg_idx]
+        coyote_Group = params.coyote_group.split('-')[0]
+        sample_subpanel = params.coyote_group.split('-')[1]
 
         """
         echo "/data/bnf/dev/saile/other/prj/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group} --subpanel ${sample_subpanel} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/tumwgs/cnv/${cnv} --transloc /access/tumwgs/manta/${fusions}  --cnvprofile  /access/tumwgs/cov/${tumPlot} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
@@ -38,11 +41,15 @@ process COYOTE {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         }
 
-        def fusions = importy[0]
-        def tumPlot = importy[1]
-        def cnv = importy[2]
-        def coyote_Group = params.coyote_group.split('-')[0]
-        def sample_subpanel = params.coyote_group.split('-')[1]
+        cnvplot_idx    = importy.findIndexOf{ it =~ 'modeled.png' }
+        cnvseg_idx     = importy.findIndexOf{ it =~ 'panel' }
+        fusions_idx    = importy.findIndexOf{ it =~ 'fusions' }
+
+        fusions  = importy[fusions_idx]
+        tumPlot  = importy[cnvplot_idx]
+        cnv      = importy[cnvseg_idx]
+        coyote_Group = params.coyote_group.split('-')[0]
+        sample_subpanel = params.coyote_group.split('-')[1]
         """
         
         echo "/data/bnf/dev/saile/other/prj/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl --group ${coyote_Group}  --subpanel ${sample_subpanel} --id ${process_group} --vcf /access/${params.subdir}/vcf/${vcf} --cnv /access/${params.subdir}/cnv/${cnv} --transloc /access/${params.subdir}/manta/${fusions} --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} --build 38 --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} --gens ${meta.id[tumor_idx]} --cnvprofile /access/tumwgs/cov/${tumPlot}" > ${process_group}.coyote
@@ -54,7 +61,7 @@ process COYOTE_YAML {
     tag "$group"
 
     input:
-       tuple val(group), val(meta), file(vcf), file(importy),file (cnvjson)
+       tuple val(group), val(meta), file(vcf), file(importy)
 
     output:
         tuple val(group), file("*.coyote.yaml"), emit: coyote_import
@@ -69,9 +76,16 @@ process COYOTE_YAML {
             process_group = group + '_single'
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         }
-        def fusions = importy[2]
-        def tumPlot = importy[0]
-        def cnv     = cnvjson[0]
+        cnvplot_idx    = importy.findIndexOf{ it =~ 'modeled.png' }
+        cnvseg_idx     = importy.findIndexOf{ it =~ 'panel' }
+        fusions_idx    = importy.findIndexOf{ it =~ 'fusions' }
+
+        fusions  = importy[fusions_idx]
+        tumPlot  = importy[cnvplot_idx]
+        cnv      = importy[cnvseg_idx]
+        coyote_Group = params.coyote_group.split('-')[0]
+        sample_subpanel = params.coyote_group.split('-')[1]
+
         
         """
         echo --- > ${process_group}.coyote.yaml
@@ -89,14 +103,20 @@ process COYOTE_YAML {
     stub:
         process_group = group
         tumor_idx = 0
-        if( meta.id.size() < 2 ) {
+        if( meta.id.size() <, 2 ) {
             process_group = group + '_single'
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         }
-        def fusions = importy[0]
-        def tumPlot = importy[1]
-        def cnv     = cnvjson[0]
-        
+        cnvplot_idx    = importy.findIndexOf{ it =~ 'modeled.png' }
+        cnvseg_idx     = importy.findIndexOf{ it =~ 'panel' }
+        fusions_idx    = importy.findIndexOf{ it =~ 'fusions' }
+
+        fusions  = importy[fusions_idx]
+        tumPlot  = importy[cnvplot_idx]
+        cnv      = importy[cnvseg_idx]
+        coyote_Group = params.coyote_group.split('-')[0]
+        sample_subpanel = params.coyote_group.split('-')[1]
+
         """
         echo --- > ${process_group}.coyote.yaml
         echo groups: [\\'$params.coyote_group\\'] >> ${process_group}.coyote.yaml

@@ -103,7 +103,8 @@ workflow SWGP_COMMON {
     
     ADD_TO_DB (
         ch_vcf_anno.finished_vcf,
-        ch_cnvcalled.vcf,
+        ch_cnvcalled.bed,
+        ch_cnvcalled.json,
         ch_svcalled.fusions,
         ch_cnvcalled.tum_plot,
     )

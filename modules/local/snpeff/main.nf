@@ -83,7 +83,7 @@ process SNPEFF_SV_ANN {
         def prefix      = task.ext.prefix ?: "${group}"
         """
         touch ${prefix}.BND.annotated.vcf
-        touch ${prefix}.TANDEM.SV_annotated.vcf
+        touch ${prefix}.TANDEM.INS.DEL.SV_annotated.vcf
 
 
         cat <<-END_VERSIONS > versions.yml
