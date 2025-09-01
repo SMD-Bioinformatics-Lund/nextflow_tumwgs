@@ -26,7 +26,7 @@ process GENS_VIZ {
 		"""
         generate_gens_data.pl ${cov_stand} ${vcf} ${meta.id} ${args}
         
-        echo "gens load sample --sample-id ${meta.id} --case-id ${process_group} --genome-build 38 --baf ${params.gens_accessdir}/${meta.id}.baf.bed.gz --coverage ${params.gens_accessdir}/${meta.id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${meta.id}.overview.json.gz" > ${meta.id}.gens
+        echo "gens load sample --sample-id ${meta.id} --case-id ${process_group} --genome-build 38 --baf ${params.gens_accessdir}/${meta.id}.baf.bed.gz --coverage ${params.gens_accessdir}/${meta.id}.cov.bed.gz" > ${meta.id}.gens
         
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -45,8 +45,8 @@ process GENS_VIZ {
         """
         touch ${meta.id}.cov.bed.gz 
         touch ${meta.id}.cov.bed.gz.tbi
-        touch ${meta.id}..baf.bed.gz
-        touch ${meta.id}..baf.bed.gz.tbi
+        touch ${meta.id}.baf.bed.gz
+        touch ${meta.id}.baf.bed.gz.tbi
         touch ${meta.id}.gens
         
         cat <<-END_VERSIONS > versions.yml
