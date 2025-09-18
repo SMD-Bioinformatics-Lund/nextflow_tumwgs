@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.0.4
+
+### Hot fix finding missing fusion in Solid panel
+
+- Updated the filter_with_fusion_panel.pl script to read panels with geene2 missing.
+
 ## v2.0.3
 
 ### Gens fix for new production middleman
