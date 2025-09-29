@@ -41,7 +41,7 @@ process COYOTE {
             --vcf /access/${params.subdir}/vcf/${vcf} \\
             --cnv /access/tumwgs/cnv/${cnv} \\
             --cnvprofile  /access/tumwgs/cov/${tumPlot} \\
-            --transloc /access/tumwgs/manta/${fusions} \\
+            --transloc /access/tumwgs/vcf/${fusions} \\
             --gens ${meta.id[tumor_idx]} \\
             --gensNorm ${meta.id[normal_idx]} " > ${process_group}.coyote
         """
@@ -75,7 +75,7 @@ process COYOTE {
             --vcf /access/${params.subdir}/vcf/${vcf} \\
             --cnv /access/tumwgs/cnv/${cnv} \\
             --cnvprofile  /access/tumwgs/cov/${tumPlot} \\
-            --transloc /access/tumwgs/manta/${fusions} \\
+            --transloc /access/tumwgs/vcf/${fusions} \\
             --gens ${meta.id[tumor_idx]} \\
             --gensNorm ${meta.id[normal_idx]} " > ${process_group}.coyote
         """
