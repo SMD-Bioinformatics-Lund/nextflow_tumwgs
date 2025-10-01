@@ -33,9 +33,11 @@ while ( my $v = $vcf->next_var() ) {
 
         my @genes = split /&/, $ann->{Gene_Name};
 
-        next if @genes < 2;
+        next if @genes < 1;
+        my $g1 = $genes[0];
+        my $g2 = scalar(@genes) > 1 ? $genes[1] : "";
 
-        my ( $class, $both ) = is_in_panel( $v, \%panel, $genes[0], $genes[1] );
+        my ( $class, $both ) = is_in_panel( $v, \%panel, $g1, $g2 );
 
         $in_both = 1 if $both;
         $max_class = max_class( $class, $max_class );
@@ -44,6 +46,7 @@ while ( my $v = $vcf->next_var() ) {
     if ($max_class) {
         add_info( $v, 'PANEL',
             'fusion|' . $max_class . '|' . ( $in_both ? 'both' : 'one' ) );
+
         vcfstr($v);
     }
 }
