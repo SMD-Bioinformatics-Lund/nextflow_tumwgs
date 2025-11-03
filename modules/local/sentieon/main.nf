@@ -86,6 +86,96 @@ process TNSCOPE {
 
 }
 
+process TNSCOPE_ML {
+    label 'process_alot'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta), file(cram), file(crai), file(bai), file(bqsr)
+
+    output:
+        tuple val(group), val(meta), file("${meta.id[tumor_idx]}.tnscope.vcf.gz"), emit: tnscope_vcf
+        path "versions.yml", emit: versions
+    
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def args    = task.ext.args     ?: ''
+        def args2   = task.ext.args2    ?: ''
+        def args3   = task.ext.args3    ?: ''
+        def args4   = task.ext.args4    ?: ''
+        def args5   = task.ext.args5    ?: ''
+
+        if( meta.id.size() >= 2 ) {
+            tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+            normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            """
+            sentieon driver -t ${task.cpus} $args \\
+                -i ${cram[tumor_idx]} -q ${bqsr[tumor_idx]} \\
+                -i ${cram[normal_idx]} -q ${bqsr[normal_idx]} \\
+                $args2 \\
+                --algo TNscope \\
+                $args3 \\
+                --tumor_sample ${meta.id[tumor_idx]} --normal_sample ${meta.id[normal_idx]} \\
+                $args4  $args5 \\
+                ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
+
+            sentieon driver -t ${task.cpus}  $args \\
+               --algo TNModelApply \\ 
+                $args5 \\
+                -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.tnscope.vcf.gz       
+
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
+            """
+        }
+        else if( meta.id.size() == 1 ) {
+            """
+            sentieon driver -t ${task.cpus} $args \\
+                -i ${cram} -q ${bqsr} \\
+                --algo TNscope \\
+                $args2 \\
+                $args3 \\
+                --tumor_sample ${meta.id[0]} \\
+                $args4 \\
+                --min_tumor_allele_frac ${params.tnscope_var_freq_cutoff_up} \\
+                tnscope_${bed}.vcf.raw
+
+            #filter_tnscope_unpaired.pl tnscope_${bed}.vcf.raw > tnscope_${bed}.vcf
+
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
+            """ 
+        }
+
+
+    stub:
+
+        if (meta.id.size() >= 2 ) {
+            tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+            normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            out_vcf = "${meta.id[tumor_idx]}.tnscope.vcf.gz"
+        
+            """
+            touch ${out_vcf}
+
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
+            """
+        }
+        else {
+
+        }
+
+}
+
 process BWA_ALIGN_SHARD {
     label 'process_alot'
     tag "${shard}_${meta.id}"
@@ -302,7 +392,7 @@ process REALIGN_INDEL_BQSR {
     label 'process_alot'
     label 'scratch'
     label 'stage'
-    tag '${meta.id}'
+    tag "${meta.id}"
 
     input:
         tuple val(group), val(meta), file(cram), file(crai), file(bai)
@@ -441,12 +531,11 @@ process COLLECT_QC {
 
 }
 
-
 process CRAM_TO_BAM {
     label 'process_alot'
     label 'scratch'
     label 'stage'
-    tag '${meta.id}'
+    tag "${meta.id}"
 
     input:
         tuple val(group), val(meta), file(cram), file(crai), file(bai)

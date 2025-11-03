@@ -2,10 +2,12 @@
 
 include { FREEBAYES                } from '../../modules/local/freebayes/main'
 include { VARDICT                  } from '../../modules/local/vardict/main'
-include { TNSCOPE                  } from '../../modules/local/sentieon/main'
+include { TNSCOPE_ML               } from '../../modules/local/sentieon/main'
+include { DEEPSOMATIC              } from '../../modules/local/deepSomatic/main'
 include { DNASCOPE                 } from '../../modules/local/sentieon/main'
 include { CONCATENATE_VCFS         } from '../../modules/local/concatenate_vcfs/main'
 include { AGGREGATE_VCFS           } from '../../modules/local/concatenate_vcfs/main'
+
 
 
 workflow SNV_CALLING {
@@ -27,8 +29,11 @@ workflow SNV_CALLING {
         ch_versions         = ch_versions.mix(VARDICT.out.versions.first())
         
         cram_bqsr.view()
-        TNSCOPE ( cram_bqsr ) 
-        ch_versions         = ch_versions.mix(TNSCOPE.out.versions.first())
+        TNSCOPE_ML ( cram_bqsr ) 
+        ch_versions         = ch_versions.mix(TNSCOPE_ML.out.versions.first())
+
+        DEEPSOMATIC (   bam_bqsr    )
+        ch_versions         = ch_versions.mix(DEEPSOMATIC.out.versions.first())   
 
         // Prepare vcf parts for concatenation //
         vcfparts_freebayes  = FREEBAYES.out.vcfparts_freebayes.groupTuple(by:[0,1])
@@ -55,7 +60,7 @@ workflow SNV_CALLING {
         concat_vcfs     =   CONCATENATE_VCFS.out.concatenated_vcfs  // channel: [ val(group), val(vc), file(vcf.gz) ]
         agg_vcf         =   AGGREGATE_VCFS.out.vcf_concat           // channel: [ val(group), val(meta), file(agg.vcf) ]
         dnascope_vcf    =   DNASCOPE.out.dnascope_vcf               // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
-        tnscope_vcf     =   TNSCOPE.out.tnscope_vcf                // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
+        tnscope_vcf     =   TNSCOPE_ML.out.tnscope_vcf                // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
         versions        =   ch_versions                             // channel: [ file(versions) ]
 
 }

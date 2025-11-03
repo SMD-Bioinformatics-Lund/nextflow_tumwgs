@@ -56,6 +56,7 @@ echo "Copying the main.nf files..."
 copy_file "$DIR/main.nf" "$PIPELINE_DEST"
 
 echo "Copying configuration file..."
+cp "$DIR"/nextflow.config "$DIR"/configs/nextflow.hopper.config 
 copy_file "$DIR/configs/nextflow.hopper.config" "$PIPELINE_DEST/nextflow.config"
 copy_directory "$DIR/configs" "$PIPELINE_DEST"
 
