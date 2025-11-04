@@ -121,10 +121,7 @@ process TNSCOPE_ML {
                 $args4  $args5 \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus}  $args \\
-               --algo TNModelApply \\ 
-                $args5 \\
-                -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.tnscope.vcf.gz       
+            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.tnscope.vcf.gz       
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":

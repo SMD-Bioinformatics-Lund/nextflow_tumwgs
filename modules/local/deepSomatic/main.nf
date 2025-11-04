@@ -41,7 +41,7 @@ process DEEPSOMATIC {
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
-                DeepSomatic: \$(run_deepsomatic --version 2>&1 | sed -e "s/: DeepVariant version //g")
+                DeepSomatic: \$(run_deepsomatic --version 2>/dev/null |sed -e "s/DeepSomatic: //g")
             END_VERSIONS
             """
         }
@@ -87,7 +87,7 @@ process DEEPSOMATIC {
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
-                DeepSomatic: stub
+                DeepSomatic: \$(run_deepsomatic --version 2>/dev/null |sed -e "s/DeepSomatic: //g")
             END_VERSIONS
 			"""
         }
