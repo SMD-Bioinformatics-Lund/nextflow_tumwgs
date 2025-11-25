@@ -29,6 +29,8 @@ Code_style.md
 TODO.md
 *_test.config
 *log
+nextflow.config
+transfer.log
 
 .venv
 .env
