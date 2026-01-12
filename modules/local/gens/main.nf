@@ -8,6 +8,7 @@ process GENS_VIZ {
 		
 	output:
 		tuple val(group), val(meta), file("*baf.bed.gz*"), file("*cov.bed.gz*"), optional: true,    emit: gens
+        tuple val(group), val(meta), file("*baf.bed.gz"), file("*cov.bed.gz"),   optional: true,    emit: gens_for_v4
         tuple val(group), val(meta), file("*.gens"),                                                emit: dbload
         path "versions.yml",                                                                        emit: versions
     
@@ -53,5 +54,45 @@ process GENS_VIZ {
         "${task.process}":
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
+        """
+}
+
+process GENS_VIZ_V4 {
+    label 'process_single'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta), file(baf), file(cov)
+
+    output:
+        tuple val(group), val(meta), file("*.gens_v4_somatic"),     emit: gens_v4
+
+    when:
+        task.ext.when == null || task.ext.when
+    
+    script:
+        process_group = group
+        tumor_idx = 0
+        if( meta.id.size() < 2 ) {
+            process_group = group + '_TumorOnly'
+            tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+        }
+        def args    = task.ext.args   ?: ''
+
+        """
+        echo "gens load sample --sample-id ${meta.id} --case-id ${process_group} --genome-build 38 --sample-type ${meta.type} --baf ${params.gens_accessdir}/${baf} --coverage ${params.gens_accessdir}/${cov}" > ${meta.id}.gens_v4_somatic
+        """
+
+    stub:
+        process_group = group
+        tumor_idx = 0
+        if( meta.id.size() < 2 ) {
+            process_group = group + '_TumorOnly'
+            tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+        }
+        def args    = task.ext.args   ?: ''
+
+        """
+        echo "gens load sample --sample-id ${meta.id} --case-id ${process_group} --genome-build 38 --sample-type ${meta.type} --baf ${params.gens_accessdir}/${baf} --coverage ${params.gens_accessdir}/${cov}" > ${meta.id}.gens_v4_somatic
         """
 }
