@@ -2,37 +2,55 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Summary
+A clear and concise description of the problem.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+---
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Steps to Reproduce
+1. Go to nextflow error logs
+2. Go to  folder that is causing the issue
+3.  Point out the bioinformatics software that is causing the problem
+4. Identify the issue the software is causing 
+4. See the issue
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+---
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Expected Behavior
+What should have happened?
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+---
 
-**Additional context**
-Add any other context about the problem here.
+## Actual Behavior
+What actually happened?
+
+---
+
+## Screenshots / Logs (if available)
+> **Important:** Ensure no sample level information is  reported here 
+
+Attach screenshots, error messages, or logs if helpful.
+
+---
+
+## Environment
+- Nextflow and pipeline  version:
+- Software bioinformatics version:
+- Sample type (if relevant, but **no IDs**):
+
+---
+
+## Reproducibility
+- [ ] Always
+- [ ] Sometimes
+- [ ] Rarely
+
+---
+
+## Additional Context
+Add any extra context that might help diagnose the issue.
