@@ -2,19 +2,41 @@
 name: Feature request
 about: Suggest an idea for this project
 title: ''
-labels: ''
+labels: enhancement
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Description
+Brief explanation of the feature or enhancement you are proposing.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+---
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Why is this needed?
+Explain the problem it solves or how it improves workflow.
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+Examples:
+- Reduces manual steps
+- Improves clarity for analysts
+- Aligns with reporting standards
+- Increases performance or accuracy
+
+---
+
+## Example Use Case
+Provide a concrete workflow showing *when and how* this feature would be used.
+
+---
+
+## Expected Impact
+- [ ] Improves speed
+- [ ] Simplifies workflow
+- [ ] Adds new functionality
+- [ ] Reduces errors
+- [ ] Improves usability
+- [ ] Other:
+
+---
+
+## Additional Notes
+Add sketches, mockups, or references if helpful
