@@ -22,9 +22,6 @@ while ( my $v = $vcf->next_var() ) {
     if (is_in_panel($v, \%panel) or !$hard_filter) {
 	    vcfstr($v);
     }
-    else {
-         vcfstr($v);   
-    }
 }
 
 
