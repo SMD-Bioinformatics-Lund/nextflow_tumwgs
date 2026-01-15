@@ -174,12 +174,12 @@ process COMBINE_FUSIONS {
     def args   = task.ext.args   ?: ''
     def prefix = task.ext.prefix ?: "${group}"
         """
-        grep -ve '^#' ${bnd} | grep 'CMD' > a.txt || true
+        grep -ve '^#' ${bnd} | grep 'CUSTOM' > a.txt || true
         grep -ve '^#' ${tandem} | grep -f ${params.FUSIONS_CNV} > b.txt || true
         cat a.txt b.txt > CMD_fusion.txt
 
         if [[ -s CMD_fusion.txt ]]; then
-                awk -F "\\t" 'BEGIN { OFS="\\t" } { print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$(NF-3) ";PANEL=fusion|somatic|both", \$9, \$10, \$11 }' CMD_fusion.txt > Selected.txt
+                awk -F "\\t" 'BEGIN { OFS="\\t" } { print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$(NF-3) ";PANEL=fusion|somatic|one", \$9, \$10, \$11 }' CMD_fusion.txt > Selected.txt
         else
             touch Selected.txt
         fi
