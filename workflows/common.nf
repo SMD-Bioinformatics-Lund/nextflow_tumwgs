@@ -2,7 +2,6 @@ nextflow.enable.dsl = 2
 
 include { CHECK_INPUT                   } from '../subworkflows/local/create_meta'
 include { SAMPLE                        } from '../subworkflows/local/sample'
-include { CUSTOM_DUMPSOFTWAREVERSIONS   } from '../modules/local/custom/dumpsoftwareversions/main'
 include { ALIGN_SENTIEON                } from '../subworkflows/local/align_sentieon'
 include { BAM_QC                        } from '../subworkflows/local/bam_qc'
 include { SNV_CALLING                   } from '../subworkflows/local/snv_calling'
@@ -11,7 +10,7 @@ include { CNV_CALLING                   } from '../subworkflows/local/cnv_callin
 include { SV_CALLING                    } from '../subworkflows/local/sv_calling'
 include { VISUALIZE                     } from '../subworkflows/local/visualize'
 include { ADD_TO_DB                     } from '../subworkflows/local/add_to_db'
-
+include { CUSTOM_DUMPSOFTWAREVERSIONS   } from '../modules/local/custom/dumpsoftwareversions/main'
 
 csv = file(params.csv)
 
