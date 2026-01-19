@@ -5,6 +5,8 @@ include { VARDICT                  } from '../../modules/local/vardict/main'
 include { TNSCOPE_ML               } from '../../modules/local/sentieon/main'
 include { DEEPSOMATIC              } from '../../modules/local/deepSomatic/main'
 include { DNASCOPE                 } from '../../modules/local/sentieon/main'
+include { PINDEL_CONFIG            } from '../../modules/local/pindel/main'
+include { PINDEL_CALLING           } from '../../modules/local/pindel/main'
 include { CONCATENATE_VCFS         } from '../../modules/local/concatenate_vcfs/main'
 include { AGGREGATE_VCFS           } from '../../modules/local/concatenate_vcfs/main'
 
@@ -12,13 +14,19 @@ include { AGGREGATE_VCFS           } from '../../modules/local/concatenate_vcfs/
 
 workflow SNV_CALLING {
     take: 
-        bam_bqsr         // channel: [mandatory] [ val(group), val(meta), file("umi.bam"), file("umi.bam.bai"), file(bqsr) ]
-        cram_dedup       // channel: [mandatory] [ val(group), val(meta), file("dedup.bam"), file("dedup.bam.bai") ]
+        bam_bqsr                    // channel: [mandatory] [ val(group), val(meta), file("umi.bam"), file("umi.bam.bai"), file(bqsr) ]
+        cram_dedup                  // channel: [mandatory] [ val(group), val(meta), file("dedup.bam"), file("dedup.bam.bai") ]
         cram_bqsr
-        beds            // channel: [mandatory] [ file(bed) ]
-        meta            // channel: [mandatory] [ [sample_id, group, sex, phenotype, paternal_id, maternal_id, case_id] ]
+        beds                        // channel: [mandatory] [ file(bed) ]
+        meta                        // channel: [mandatory] [ [sample_id, group, sex, phenotype, paternal_id, maternal_id, case_id] ]
+        dedup_cram_is_metrics       // [ val(group), val(meta), file(dedup_cram), file(dedup_crai), file(dedup_bai) file(is_metrics) ]
     main:
         ch_versions = Channel.empty()
+
+        // Pindel //
+        PINDEL_CONFIG ( dedup_cram_is_metrics )
+        PINDEL_CALLING ( dedup_cram_is_metrics, PINDEL_CONFIG.out.pindel_config )
+        ch_versions         = ch_versions.mix(PINDEL_CALLING.out.versions)
 
         // Variantcallers //
         // split by bed-file to speed up calling //
@@ -49,7 +57,7 @@ workflow SNV_CALLING {
         ch_versions         = ch_versions.mix(CONCATENATE_VCFS.out.versions.first())
 
         // Aggregate all callers to one VCF
-        AGGREGATE_VCFS { CONCATENATE_VCFS.out.concatenated_vcfs.groupTuple().join(meta.groupTuple())  }
+        AGGREGATE_VCFS { CONCATENATE_VCFS.out.concatenated_vcfs.mix(PINDEL_CALLING.out.pindel_vcf).groupTuple().join(meta.groupTuple())  }
         AGGREGATE_VCFS.out.vcf_concat.view()
         ch_versions         = ch_versions.mix(AGGREGATE_VCFS.out.versions.first())
 

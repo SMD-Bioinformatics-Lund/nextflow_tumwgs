@@ -35,7 +35,9 @@ workflow BAM_QC {
         PAIRGEN_CDM (SNP_CHECK.out.idsnp_checked)
 
     emit:
-        qcdone                  =   QC_TO_CDM.out.cdm_done    // channel: [ val(group), val(meta), file
-        versions                =   ch_versions              // channel: [ file(versions) ]
-        dedup_bam_is_metrics    =   COLLECT_QC.out.qc_cdm   // channel: [ val(group), val(meta), file(is_metrics.txt) ] 
+
+        qcdone                  =   QC_TO_CDM.out.cdm_done                        // channel: [ val(group), val(meta), file
+        versions                =   ch_versions                                  // channel: [ file(versions) ]
+        dedup_cram_is_metrics   =   SENTIEON_QC.out.dedup_cram_is_metrices      // [ val(group), val(meta), file(dedup_cram), file(dedup_crai), file(dedup_bai) file(is_metrics) ]
+        qcdone                  =   COLLECT_QC.out.qc_cdm   
 }

@@ -64,6 +64,7 @@ workflow SWGP_COMMON {
         ch_mapped.cram_bqsr.groupTuple(),
         ch_beds,
         CHECK_INPUT.out.meta,
+        ch_qc.dedup_cram_is_metrics.groupTuple(),
     )
     .set { ch_vcf }
     ch_versions = ch_versions.mix(ch_vcf.versions)

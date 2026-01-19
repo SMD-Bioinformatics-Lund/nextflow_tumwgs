@@ -448,8 +448,9 @@ process SENTIEON_QC {
                 path("gc_metrics.txt"),
                 path("aln_metrics.txt"),
                 path("is_metrics.txt"),
-                path("wgs_metrics.txt"),                                               emit: qc
-        path "versions.yml",                                                           emit: versions
+                path("wgs_metrics.txt"),                                                            emit: qc
+        tuple val(group), val(meta), file(cram), file(crai), file(bai), file("*_is_metrics.txt"),   emit: dedup_cram_is_metrices
+        path "versions.yml",                                                                        emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -464,6 +465,8 @@ process SENTIEON_QC {
             --algo GCBias --summary gc_summary.txt gc_metrics.txt --algo AlignmentStat aln_metrics.txt \\
             --algo InsertSizeMetricAlgo is_metrics.txt \\
             --algo WgsMetricsAlgo wgs_metrics.txt
+        
+        cp is_metrics.txt ${prefix}_is_metrics.txt
         
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -482,6 +485,7 @@ process SENTIEON_QC {
         touch is_metrics.txt    
         touch wgs_metrics.txt
         touch ${prefix}_${meta.type}.QC
+        touch ${prefix}_is_metrics.txt
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
