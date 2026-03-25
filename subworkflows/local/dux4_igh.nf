@@ -26,6 +26,9 @@ workflow DUX4IGH_CALLING {
         JSON_PELOPS_TO_VCF ( PELOPS_DUX4.out.pelops_dux4_json.groupTuple() )
         ch_versions = ch_versions.mix(JSON_PELOPS_TO_VCF.out.versions)  
 
+        // FILTER_PELOPS_DUX4 ( JSON_PELOPS_TO_VCF.out.pelops_dux4_vcf )
+        // ch_versions = ch_versions.mix(FILTER_PELOPS_DUX4.out.versions)
+
     emit:
         pelops_dux4_vcf   = JSON_PELOPS_TO_VCF.out.pelops_dux4_vcf
         versions    =   ch_versions     // channel: [ file(versions) ]

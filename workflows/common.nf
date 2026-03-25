@@ -58,14 +58,14 @@ workflow SWGP_COMMON {
     )
     .set { ch_qc }
     ch_versions = ch_versions.mix(ch_qc.versions)
-
+    
     DUX4IGH_CALLING (
-        ch_mapped.cram_dedup,
-        CHECK_INPUT.out.meta
-    )
+            ch_mapped.cram_dedup,
+            CHECK_INPUT.out.meta
+        )
     .set { ch_dux4_igh }
     ch_versions = ch_versions.mix(ch_dux4_igh.versions)
-
+    
     SNV_CALLING ( 
         ch_mapped.bam_bqsr.groupTuple(),
         ch_mapped.cram_dedup,
