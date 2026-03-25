@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.0.5
+
+### Hot fix the vep gnomad filter
+
+- Updated and pushed fix_vep_gnomad.pl script to fix the gnomad filter for vep annotations
+
 ## v2.0.4
 
 ### Hot fix finding missing fusion in Solid panel
