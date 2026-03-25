@@ -10,4 +10,4 @@ work/
 __test/
 main_test.nf
 transfer.log
-
+git.hash
