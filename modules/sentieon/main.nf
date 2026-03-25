@@ -906,11 +906,16 @@ process FILTER_WITH_PANEL_SNV {
 		if (panel_info == "solid" ) { 
 			"""
 			filter_with_panel_snv.pl ${vcf} ${snv_panel} ${should_hard_filter} > ${group}.agg.pon.vep.panel.vcf
+			fix_vep_gnomad.pl ${group}.agg.pon.vep.panel.vcf  > ${group}.agg.pon.vep.panel.fix.vcf
+			mv ${group}.agg.pon.vep.panel.fix.vcf ${group}.agg.pon.vep.panel.vcf
+			
 			"""
 		}
 		else {
 			"""
 			filter_with_panel_snv_al.pl ${vcf} ${snv_panel} ${should_hard_filter} > ${group}.agg.pon.vep.panel.vcf
+			fix_vep_gnomad.pl ${group}.agg.pon.vep.panel.vcf  > ${group}.agg.pon.vep.panel.fix.vcf
+			mv ${group}.agg.pon.vep.panel.fix.vcf ${group}.agg.pon.vep.panel.vcf
 			"""
 		}
 }
