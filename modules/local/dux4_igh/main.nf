@@ -114,12 +114,7 @@ process JSON_PELOPS_TO_VCF {
             id_normal = meta[normal_idx].id
         
             """
-            pelops_json_to_vcf.py \\
-                --tumor-json ${jsons[tumor_idx]} \\ 
-                --normal-json ${jsons[normal_idx]} \\
-                --tumor-name ${id_tumor} \\
-                --normal-name ${id_normal} \\
-                --output ${prefix}.pelops.vcf
+            pelops_json_to_vcf.py --tumor-json ${jsons[tumor_idx]} --normal-json ${jsons[normal_idx]} --tumor-name ${id_tumor} --normal-name ${id_normal} --output ${prefix}.pelops.vcf
             
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
