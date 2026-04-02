@@ -1,4 +1,4 @@
-## Center for molecular diagnostics (CMD) tumor whole genome sequencing pipeline 
+## Center for molecular diagnostics (SMD) tumor whole genome sequencing pipeline 
 
 The main script for running the pipeline is "main.nf". You have to change the config file accordingly to the server requirements and panel accordingly to research question - i.e either hematolgy and solid tumor. Currently, our computing server is "hopper and grace" hence a profile $hopper is created with all the server descriptions (see nextflow.config for more information).Running the pipeline based on biologial question types in our CMD server (hopper/grace) is given below:  
 
