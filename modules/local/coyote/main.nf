@@ -161,7 +161,7 @@ process COYOTE_YAML {
         echo genome_build: 38 >> ${process_group}.coyote3.yaml
         echo vcf_files: /access/${params.subdir}/vcf/${vcf} >> ${process_group}.coyote3.yaml
         echo cnvprofile: /access/${params.subdir}/cov/${tumPlot} >> ${process_group}.coyote3.yaml
-        echo transloc: /access/${params.subdir}/manta/${fusions} >> ${process_group}.coyote3.yaml
+        echo transloc: /access/${params.subdir}/vcf/${fusions} >> ${process_group}.coyote3.yaml
         echo cnv: /access/${params.subdir}/cnv/${cnv} >> ${process_group}.coyote3.yaml
         echo pipeline: \\'${workflow.manifest.name}\\' >> ${process_group}.coyote3.yaml
         echo pipeline_version: ${workflow.manifest.version} >> ${process_group}.coyote3.yaml
