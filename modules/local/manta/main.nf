@@ -131,8 +131,8 @@ process MANTA_SV {
         def prefix      = task.ext.prefix ?: "${group}"
     
         """
-        convertInversion.py $args ${vcf} > ${prefix}.manta.all.vcf
-        grep -e \$'\\tPASS\\t' -e '^#' ${prefix}.manta.all.vcf |grep -Ev 'GL000|hs37d5' > ${prefix}.manta.SV.pass.vcf
+        ## convertInversion.py $args ${vcf} > ${prefix}.manta.all.vcf # need to rethink the inversion filtering, as the current one is missed by snpeff annotation
+        grep -e \$'\\tPASS\\t' -e '^#' ${vcf} |grep -Ev 'GL000|hs37d5' > ${prefix}.manta.SV.pass.vcf
     
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
