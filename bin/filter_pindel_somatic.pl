@@ -19,15 +19,19 @@ while ( my $line = <$IN> ) {
 
     chomp $line;
     my @fields = split /\t/, $line;
+    #print "Processing variant at $fields[0]:$fields[1] ($fields[3] > $fields[4])\n";
 
     # Extract genotypes (GT) from all sample columns
     my @gts = map { ( split /:/ )[0] } @fields[ 9 .. $#fields ];
+    #print "GTs: ", join(", ", @gts), "\n";
 
     # 1 Remove all variants if all GTs are 0/0
     my $all_ref = 1;
     foreach my $gt (@gts) {
         if ( $gt ne '0/0' ) {
             $all_ref = 0;
+            print "Processing variant at $fields[0]:$fields[1] ($fields[3] > $fields[4])\n";
+            print "GTs: ", join(", ", @gts), "\n";
             last;
         }
     }
@@ -35,7 +39,7 @@ while ( my $line = <$IN> ) {
 
     # 2 If exactly 2 samples: keep only if genotypes differ
     if ( @gts == 2 ) {
-        my ( $tumor_sample, $normal_sample ) = @fields[ 9, 10 ];
+        my (  $normal_sample,$tumor_sample ) = @fields[ 9, 10 ];
 
         # Get AD field index in FORMAT
         my @format_fields = split /:/, $fields[8];    # FORMAT column
@@ -70,10 +74,10 @@ while ( my $line = <$IN> ) {
         next if $t_total <= 0;
         next if $n_total <= 10;
 
-        # print(
-        #     "tumor_AD",  "\t", $t_total, "\t",
-        #     "normal_AD", "\t", $n_total, "\n"
-        # );
+        print(
+            "tumor_AD",  "\t", $t_total, "\t",
+            "normal_AD", "\t", $n_total, "\n"
+        );
 
         my $t_vaf = $t_alt / $t_total;
         my $n_vaf = $n_total == 0 ? 0 : $n_alt / $n_total;
