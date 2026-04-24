@@ -36,7 +36,7 @@ workflow SNV_CALLING {
         VARDICT ( bam_bqsr, beds)
         ch_versions         = ch_versions.mix(VARDICT.out.versions.first())
         
-        cram_bqsr.view()
+        // cram_bqsr.view()
         TNSCOPE_ML ( cram_bqsr ) 
         ch_versions         = ch_versions.mix(TNSCOPE_ML.out.versions.first())
 
@@ -58,7 +58,7 @@ workflow SNV_CALLING {
 
         // Aggregate all callers to one VCF
         AGGREGATE_VCFS { CONCATENATE_VCFS.out.concatenated_vcfs.mix(PINDEL_CALLING.out.pindel_vcf).groupTuple().join(meta.groupTuple())  }
-        AGGREGATE_VCFS.out.vcf_concat.view()
+        // AGGREGATE_VCFS.out.vcf_concat.view()
         ch_versions         = ch_versions.mix(AGGREGATE_VCFS.out.versions.first())
 
         DNASCOPE { cram_dedup.groupTuple(by:[0,1])}

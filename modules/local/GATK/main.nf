@@ -134,6 +134,7 @@ process GATKCOV_COUNT {
         set +u
         source activate gatk
 
+        echo $sex
         touch ${prefix}.standardizedCR.tsv 
         touch ${prefix}.denoisedCR.tsv
 

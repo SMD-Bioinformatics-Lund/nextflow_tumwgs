@@ -21,7 +21,7 @@ workflow DUX4IGH_CALLING {
         PELOPS_DUX4 ( REHEADER_CRAM.out.cram_header_fixed)
         ch_versions = ch_versions.mix(PELOPS_DUX4.out.versions)
         
-        PELOPS_DUX4.out.pelops_dux4_json.groupTuple().view { println "PELOPS_DUX4 output: ${it}" }
+        // PELOPS_DUX4.out.pelops_dux4_json.groupTuple().view { println "PELOPS_DUX4 output: ${it}" }
 
         JSON_PELOPS_TO_VCF ( PELOPS_DUX4.out.pelops_dux4_json.groupTuple() )
         ch_versions = ch_versions.mix(JSON_PELOPS_TO_VCF.out.versions)  

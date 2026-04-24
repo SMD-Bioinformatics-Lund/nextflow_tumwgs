@@ -502,7 +502,7 @@ process COLLECT_QC {
         tuple val(group), val(meta), path(mq), path(qd), path(gc), path(gc_metrices), path(aln), path(is), path(wgs)
 
     output:
-        tuple val(group), val(meta), file("*_${meta.type}.QC"),                        emit: qc_cdm
+        tuple val(group), val(meta), file("*_${meta.type}.aln.QC"),                    emit: alignment_qc
         path "versions.yml",                                                           emit: versions
 
     when:
@@ -511,7 +511,7 @@ process COLLECT_QC {
     script:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
-        qc_sentieon.pl ${meta.id}_${meta.type} wgs > ${prefix}_${meta.type}.QC
+        qc_sentieon.pl ${meta.id}_${meta.type} wgs > ${prefix}_${meta.type}.aln.QC
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -522,7 +522,7 @@ process COLLECT_QC {
     stub:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
-        touch ${meta.id}_${meta.type}.QC
+        touch ${meta.id}_${meta.type}.aln.QC
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

@@ -1,4 +1,3 @@
-
 process QC_TO_CDM {
     label 'process_single'
     tag "${meta.id}"
@@ -236,6 +235,46 @@ process LOWCOV_D4 {
             python: \$(python --version 2>&1| sed -e 's/Python //g')
             d4tools: \$(echo \$( d4tools 2>&1 | head -1 ) | sed "s/.*version: //" | sed "s/)//" )
             bedtools: \$(bedtools | grep Version | sed -r "s/Version:\s+//")
+        END_VERSIONS
+        """
+}
+
+process MERGE_QC_JSON {
+    label 'process_single'
+    tag "${group}"
+
+    input:
+        tuple val(group), val(meta), file(alg_qc_json), file (contamination_json)
+
+    output:
+        tuple val(group), val(meta), file("*_${meta.type}.QC"), emit: qc_json
+        path "versions.yml", emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def args    = task.ext.args     ?: ""
+        def prefix  = task.ext.prefix   ?: "${meta.id}"
+        """
+        merge_json_files.py $args $alg_qc_json $contamination_json > ${prefix}_${meta.type}.QC
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+        END_VERSIONS
+        """
+
+    stub:
+        def args    = task.ext.args     ?: ""
+        def prefix  = task.ext.prefix   ?: "${meta.id}"
+        """
+        touch ${prefix}_${meta.type}.QC
+        echo    "merge_json_files.py $args $alg_qc_json $contamination_json > ${prefix}_${meta.type}.QC"
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
         END_VERSIONS
         """
 }

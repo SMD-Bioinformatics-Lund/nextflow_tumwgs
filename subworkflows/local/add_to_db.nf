@@ -17,7 +17,7 @@ workflow ADD_TO_DB {
 
         // optional.view()
         // vcf.view()
-        vcf.join(optional).view()
+        // vcf.join(optional).view()
         COYOTE { vcf.join(optional) }
         COYOTE_YAML { vcf.join(optional_json) }
 

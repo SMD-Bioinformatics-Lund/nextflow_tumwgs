@@ -6,6 +6,9 @@ include { QC_TO_CDM            } from '../../modules/local/qc/main'
 include { ALLELE_CALL          } from '../../modules/local/idSnp/main'
 include { SNP_CHECK            } from '../../modules/local/idSnp/main'
 include { PAIRGEN_CDM          } from '../../modules/local/idSnp/main'
+include { VERIFYBAMID2         } from '../../modules/local/verfifybam2/main'
+include { MERGE_QC_JSON        } from '../../modules/local/qc/main'
+
 
 workflow BAM_QC {
     take:
@@ -15,15 +18,25 @@ workflow BAM_QC {
 
     main:
         ch_versions = Channel.empty()
+        ch_qc_json  = Channel.empty()
         
         SENTIEON_QC ( bam_dedup.join(dedup_metrics, by:[0,1]) )
         ch_versions = ch_versions.mix(SENTIEON_QC.out.versions)
 
         COLLECT_QC ( SENTIEON_QC.out.qc )
+        ch_qc_json = ch_qc_json.mix(COLLECT_QC.out.alignment_qc)
         ch_versions = ch_versions.mix(COLLECT_QC.out.versions)
 
-        QC_TO_CDM ( COLLECT_QC.out.qc_cdm )
+        VERIFYBAMID2 (bam_dedup)
+        ch_versions = ch_versions.mix(VERIFYBAMID2.out.versions)
+        ch_qc_json  = ch_qc_json.join(VERIFYBAMID2.out.contamination_json, by:[0,1])
 
+        ch_qc_json.view()
+
+        MERGE_QC_JSON (ch_qc_json)
+        ch_versions = ch_versions.mix(MERGE_QC_JSON.out.versions)
+
+        QC_TO_CDM ( MERGE_QC_JSON.out.qc_json )
 
         // Check genotypes of ID-SNPs
         ALLELE_CALL (bam_bqsr)
@@ -39,5 +52,5 @@ workflow BAM_QC {
         qcdone                  =   QC_TO_CDM.out.cdm_done                        // channel: [ val(group), val(meta), file
         versions                =   ch_versions                                  // channel: [ file(versions) ]
         dedup_cram_is_metrics   =   SENTIEON_QC.out.dedup_cram_is_metrices      // [ val(group), val(meta), file(dedup_cram), file(dedup_crai), file(dedup_bai) file(is_metrics) ]
-        qcdone                  =   COLLECT_QC.out.qc_cdm   
+        //qcdone                  =   COLLECT_QC.out.qc_cdm   
 }
