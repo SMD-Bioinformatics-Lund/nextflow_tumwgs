@@ -8,6 +8,9 @@ include { SNP_CHECK            } from '../../modules/local/idSnp/main'
 include { PAIRGEN_CDM          } from '../../modules/local/idSnp/main'
 include { VERIFYBAMID2         } from '../../modules/local/verfifybam2/main'
 include { MERGE_QC_JSON        } from '../../modules/local/qc/main'
+include { CREATE_PED_FILES     } from '../../modules/local/somalier/main'
+include { SOMALIER_QC          } from '../../modules/local/somalier/main'
+
 
 
 workflow BAM_QC {
@@ -15,6 +18,7 @@ workflow BAM_QC {
         bam_bqsr        // channel: [ val(group), val(meta), file(bam), file(bai) ]
         bam_dedup       // channel: [ val(group), val(meta), file(cram), file(crai), file(bai) ]
         dedup_metrics   // channel: [ val(group), val(meta), file(dedup_metrics) ]
+        meta       // channel: [ val(group), val(meta)]
 
     main:
         ch_versions = Channel.empty()
@@ -31,7 +35,40 @@ workflow BAM_QC {
         ch_versions = ch_versions.mix(VERIFYBAMID2.out.versions)
         ch_qc_json  = ch_qc_json.join(VERIFYBAMID2.out.contamination_json, by:[0,1])
 
-        ch_qc_json.view()
+        //ch_qc_json.view()
+
+        CREATE_PED_FILES ( meta )
+        ch_versions = ch_versions.mix(CREATE_PED_FILES.out.versions)
+        
+        ch_PED = CREATE_PED_FILES.out.ped_file 
+
+        ch_PED_grouped = ch_PED
+            .groupTuple(by: 0)
+            .map { group_id, meta_list, ped_list ->
+                def meta_by_type = [:]
+                def ped_by_type = [:]
+        
+                meta_list.eachWithIndex { meta, idx ->
+                meta_by_type[meta.type] = meta
+                ped_by_type[meta.type] = ped_list[idx]
+            }
+        
+            // Order N then T
+            def ordered_types = ['N', 'T']
+            def ordered_meta = ordered_types.collect { meta_by_type[it] }
+            def ordered_peds = ordered_types.collect { ped_by_type[it] }
+        
+            [group_id, ordered_meta, ordered_peds]
+        }
+        ch_BAM_PED_grouped = bam_dedup.groupTuple().join(ch_PED_grouped, by: 0)
+
+        ch_somalier = ch_BAM_PED_grouped.map { group_id, bam_meta, crams, crais, bais, ped_meta, peds ->
+            [group_id, bam_meta, crams, crais, bais, peds]
+        }
+        
+        ch_somalier.view { println "Somalier input: ${it}"  }
+        SOMALIER_QC ( ch_somalier )
+        ch_versions = ch_versions.mix(SOMALIER_QC.out.versions)
 
         MERGE_QC_JSON (ch_qc_json)
         ch_versions = ch_versions.mix(MERGE_QC_JSON.out.versions)

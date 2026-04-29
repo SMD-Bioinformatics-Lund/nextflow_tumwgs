@@ -54,7 +54,8 @@ workflow SWGP_COMMON {
     BAM_QC (
         ch_mapped.bam_bqsr,
         ch_mapped.cram_dedup,
-        ch_mapped.dedup_metrics
+        ch_mapped.dedup_metrics,
+        CHECK_INPUT.out.meta 
     )
     .set { ch_qc }
     ch_versions = ch_versions.mix(ch_qc.versions)

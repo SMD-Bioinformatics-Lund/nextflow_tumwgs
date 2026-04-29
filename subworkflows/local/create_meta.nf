@@ -69,6 +69,19 @@ def create_samples_channel(LinkedHashMap row) {
 	meta.sequencing_run     = row.sequencing_run
 	meta.reads              = (row.containsKey("n_reads") ? row.n_reads : false)
 	meta.clarity_pool_id    = row.clarity_pool_id
+	sub = false
+	if (meta.reads && params.sample) {  
+		if (meta.reads.toInteger() > params.sample_val) {
+			sub = (params.sample_val / meta.reads.toInteger()).round(2)
+			if (sub == 1.00){
+				sub = 0.99
+			}
+		}
+		else {
+			sub = false
+		}
+	}
+	meta.sub = sub
 
 	def sample_meta = [row.group, meta]
 	return sample_meta
