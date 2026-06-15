@@ -3,6 +3,7 @@
 include { FREEBAYES                } from '../../modules/local/freebayes/main'
 include { VARDICT                  } from '../../modules/local/vardict/main'
 include { TNSCOPE_ML               } from '../../modules/local/sentieon/main'
+include { TNSCOPE_FILTER           } from '../../modules/local/sentieon/main'
 include { DEEPSOMATIC              } from '../../modules/local/deepSomatic/main'
 include { DNASCOPE                 } from '../../modules/local/sentieon/main'
 include { PINDEL_CONFIG            } from '../../modules/local/pindel/main'
@@ -40,6 +41,9 @@ workflow SNV_CALLING {
         TNSCOPE_ML ( cram_bqsr ) 
         ch_versions         = ch_versions.mix(TNSCOPE_ML.out.versions.first())
 
+        TNSCOPE_FILTER ( TNSCOPE_ML.out.tnscope_vcf)
+        ch_versions         = ch_versions.mix(TNSCOPE_FILTER.out.versions)
+
         DEEPSOMATIC (   bam_bqsr    )
         ch_versions         = ch_versions.mix(DEEPSOMATIC.out.versions.first())   
 
@@ -57,7 +61,7 @@ workflow SNV_CALLING {
         ch_versions         = ch_versions.mix(CONCATENATE_VCFS.out.versions.first())
 
         // Aggregate all callers to one VCF
-        AGGREGATE_VCFS { CONCATENATE_VCFS.out.concatenated_vcfs.mix(PINDEL_CALLING.out.pindel_vcf).groupTuple().join(meta.groupTuple())  }
+        AGGREGATE_VCFS { CONCATENATE_VCFS.out.concatenated_vcfs.mix(PINDEL_CALLING.out.pindel_vcf,TNSCOPE_FILTER.out.tnscope_filtered_vcf).groupTuple().join(meta.groupTuple())  }
         // AGGREGATE_VCFS.out.vcf_concat.view()
         ch_versions         = ch_versions.mix(AGGREGATE_VCFS.out.versions.first())
 
@@ -65,10 +69,10 @@ workflow SNV_CALLING {
         ch_versions         = ch_versions.mix(DNASCOPE.out.versions)
 
     emit:
-        concat_vcfs     =   CONCATENATE_VCFS.out.concatenated_vcfs  // channel: [ val(group), val(vc), file(vcf.gz) ]
-        agg_vcf         =   AGGREGATE_VCFS.out.vcf_concat           // channel: [ val(group), val(meta), file(agg.vcf) ]
-        dnascope_vcf    =   DNASCOPE.out.dnascope_vcf               // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
-        tnscope_vcf     =   TNSCOPE_ML.out.tnscope_vcf                // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
-        versions        =   ch_versions                             // channel: [ file(versions) ]
+        concat_vcfs     =   CONCATENATE_VCFS.out.concatenated_vcfs                  // channel: [ val(group), val(vc), file(vcf.gz) ]
+        agg_vcf         =   AGGREGATE_VCFS.out.vcf_concat                           // channel: [ val(group), val(meta), file(agg.vcf) ]
+        dnascope_vcf    =   DNASCOPE.out.dnascope_vcf                               // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
+        tnscope_vcf     =   TNSCOPE_FILTER.out.tnscope_filtered_vcf                 // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
+        versions        =   ch_versions                                             // channel: [ file(versions) ]
 
 }

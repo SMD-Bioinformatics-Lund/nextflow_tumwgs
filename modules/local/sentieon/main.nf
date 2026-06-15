@@ -94,7 +94,7 @@ process TNSCOPE_ML {
         tuple val(group), val(meta), file(cram), file(crai), file(bai), file(bqsr)
 
     output:
-        tuple val(group), val(meta), file("${meta.id[tumor_idx]}.tnscope.vcf.gz"), emit: tnscope_vcf
+        tuple val(group), val(meta), file("${meta.id[tumor_idx]}.all.tnscope.vcf.gz"), emit: tnscope_vcf
         path "versions.yml", emit: versions
     
     when:
@@ -121,7 +121,7 @@ process TNSCOPE_ML {
                 $args4  $args5 \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.tnscope.vcf.gz       
+            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz       
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -171,6 +171,58 @@ process TNSCOPE_ML {
 
         }
 
+}
+
+
+process TNSCOPE_FILTER {
+    label "process_single"
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(vcf)
+        
+    output:
+        tuple val(group), val("tnscope"), file("*_tnscope.vcf.gz"), emit: tnscope_filtered_vcf
+        path "versions.yml",                                        emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def prefix  = task.ext.prefix              ?: "${group}"
+        def args    = task.ext.args                ?: ''
+        def args2   = task.ext.args2               ?: ''
+        def args3   = task.ext.args3               ?: ''
+        def args4   = task.ext.args4               ?: ''
+        """
+        
+        bcftools norm $args ${vcf} |vcfuniq | bcftools filter $args2 -o ${prefix}.norm.uniq.pass.vcf.gz
+        bcftools index -t ${prefix}.norm.uniq.pass.vcf.gz
+        bedtools intersect -a ${prefix}.norm.uniq.pass.vcf.gz $args3 | bcftools view $arg4 -o ${prefix}.interesected.tnscope.vcf.gz
+        bcftools index -t ${prefix}_tnscope.vcf.gz
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
+        """
+    stub:
+        def prefix  = task.ext.prefix ?: "${group}"
+        def args    = task.ext.args                ?: ''
+        def args2   = task.ext.args2               ?: ''
+        def args3   = task.ext.args3               ?: ''
+        def args4   = task.ext.args4               ?: ''
+        """
+        touch arguments.txt
+        echo $args $args2 $args3 $args4 > arguments.txt
+        touch ${prefix}_tnscope.vcf.gz
+        touch ${prefix}_
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
+        """
 }
 
 process BWA_ALIGN_SHARD {
