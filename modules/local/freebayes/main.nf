@@ -39,7 +39,7 @@ process FREEBAYES {
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
                 freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
-                vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
+                vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed  's/.* //g' )
                 perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
             END_VERSIONS
             """
@@ -97,3 +97,21 @@ process FREEBAYES {
             """
         }
 }
+
+
+/* Notes for freebayes :
+freebayes \
+  -t bedpart.9.bed \
+  -f GCA_000001405.15_GRCh38_no_alt_analysis_set_nochr.fna \
+  --pooled-continuous \
+  --min-repeat-entropy 1 \
+  -F 0.01 \
+  -C 3 \
+  -m 20 \
+  -q 20 \
+  --use-best-n-alleles 4 \
+  GMSAL-AML5-T.T.sort.dedup.realign.bam \
+  GMSAL-AML5-N.N.sort.dedup.realign.bam \
+  > freebayes_bedpart.9.bed.vcf
+
+*/

@@ -59,7 +59,7 @@ while ( my $v = $vcf->next_var() ) {
 	if( $vaf{T} < 0.02 ) {
 	    push @status, "FAIL_VERYLOW_TVAF";
 	}
-	elsif( $vaf{T} < 0.05 ) {
+	elsif( $vaf{T} < 0.03 ) {
 	    push @status, "FAIL_LOW_TVAF";
 	}
 	if( $strand_bias{T} < 0.05 ) {

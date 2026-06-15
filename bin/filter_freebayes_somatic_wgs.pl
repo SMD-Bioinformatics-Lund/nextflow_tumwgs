@@ -86,11 +86,11 @@ while ( my $v = $vcf->next_var() ) {
 	    my $NVAF = $altobs{N}->[$TALT-1] / $depth{N};
 	    my $TVAF = $altobs{T}->[$TALT-1] / $depth{T};
 
-	    if( $TVAF < 0.05 ) {
-		$status = "FAIL_LOW_TVAF";
+	    if( $TVAF < 0.03 ) {
+			$status = "FAIL_LOW_TVAF";
 	    }
 	    if( $NVAF > 0 and ($TVAF/$NVAF < $MIN_VAF_RATIO) ) {
-		$status = "FAIL_NVAF";
+			$status = "FAIL_NVAF";
 	    }
 	    
 	}
