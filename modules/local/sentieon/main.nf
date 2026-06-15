@@ -156,7 +156,7 @@ process TNSCOPE_ML {
         if (meta.id.size() >= 2 ) {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
-            out_vcf = "${meta.id[tumor_idx]}.tnscope.vcf.gz"
+            out_vcf = "${meta.id[tumor_idx]}.all.tnscope.vcf.gz"
         
             """
             touch ${out_vcf}
@@ -198,7 +198,7 @@ process TNSCOPE_FILTER {
         
         bcftools norm $args ${vcf} |vcfuniq | bcftools filter $args2 -o ${prefix}.norm.uniq.pass.vcf.gz
         bcftools index -t ${prefix}.norm.uniq.pass.vcf.gz
-        bedtools intersect -a ${prefix}.norm.uniq.pass.vcf.gz $args3 | bcftools view $arg4 -o ${prefix}.interesected.tnscope.vcf.gz
+        bedtools intersect -a ${prefix}.norm.uniq.pass.vcf.gz $args3 | bcftools view $args4 -o ${prefix}.interesected.tnscope.vcf.gz
         bcftools index -t ${prefix}_tnscope.vcf.gz
 
         cat <<-END_VERSIONS > versions.yml
@@ -216,7 +216,7 @@ process TNSCOPE_FILTER {
         touch arguments.txt
         echo $args $args2 $args3 $args4 > arguments.txt
         touch ${prefix}_tnscope.vcf.gz
-        touch ${prefix}_
+        touch ${prefix}_tnscope.vcf.gz.tbi
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
