@@ -198,7 +198,7 @@ process TNSCOPE_FILTER {
         
         bcftools norm $args ${vcf} |vcfuniq | bcftools filter $args2 -o ${prefix}.norm.uniq.pass.vcf.gz
         bcftools index -t ${prefix}.norm.uniq.pass.vcf.gz
-        bedtools intersect -a ${prefix}.norm.uniq.pass.vcf.gz $args3 | bcftools view $args4 -o ${prefix}.interesected.tnscope.vcf.gz
+        bedtools intersect -a ${prefix}.norm.uniq.pass.vcf.gz $args3 | bcftools view $args4 -o ${prefix}_tnscope.vcf.gz
         bcftools index -t ${prefix}_tnscope.vcf.gz
 
         cat <<-END_VERSIONS > versions.yml
