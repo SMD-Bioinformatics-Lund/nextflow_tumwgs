@@ -1027,7 +1027,7 @@ process GATKCOV_BAF {
 	input:
 		path(params.GATK_GNOMAD)
 		path(params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
 
 	output:
 		tuple	val(group), val(id), val(type), path ("${id}.allelicCounts.tsv")
@@ -1051,19 +1051,22 @@ process GATKCOV_COUNT_TUM {
 
 	input:
 		path (params.COV_INTERVAL_LIST)
-		path (params.GATK_PON_FEMALE)
-		path (params.GATK_PON_MALE)
 		path {params.GENOMEDICT}
 		path (params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		val (sequencing)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
 
 	output:
 		tuple val (group), val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
 		tuple val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
 
 	script:
-		
-		PON = [F: params.GATK_PON_FEMALE, M: params.GATK_PON_MALE]
+		def config = sequencing[platform[0]]
+		println "DEBUG: sequencing = ${sequencing}"
+        println "DEBUG: platform = ${platform}"
+		println "DEBUG: config 	= ${config}"
+		def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+		println "DEBUG: PON 	= ${PON}"
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T'  }
 
 	"""
@@ -1077,7 +1080,7 @@ process GATKCOV_COUNT_TUM {
 
 	gatk --java-options "-Xmx50g" DenoiseReadCounts \\
 		-I ${cram[tumor_idx]}.hdf5 \\
-		--count-panel-of-normals ${PON[sex[tumor_idx]]} \\
+		--count-panel-of-normals ${PON} \\
 		--standardized-copy-ratios ${id[tumor_idx]}.standardizedCR.tsv \\
 		--denoised-copy-ratios ${id[tumor_idx]}.denoisedCR.tsv
 	
@@ -1144,11 +1147,10 @@ process GATKCOV_COUNT_NOR {
 
 	input:
 		path (params.COV_INTERVAL_LIST)
-		path (params.GATK_PON_FEMALE)
-		path (params.GATK_PON_MALE)
 		path {params.GENOMEDICT}
 		path (params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		val (sequencing)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type),val(platform)
 
 	output:
 		tuple	val(group), val("${id[normal_idx]}"),  path("${id[normal_idx]}.standardizedCR.tsv"), path("${id[normal_idx]}.denoisedCR.tsv")
@@ -1156,7 +1158,8 @@ process GATKCOV_COUNT_NOR {
 
 	script:
 		
-		PON = [F: params.GATK_PON_FEMALE, M: params.GATK_PON_MALE]
+		def config = sequencing[platform[0]]
+		def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
 		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N'  }
 
 
@@ -1172,7 +1175,7 @@ process GATKCOV_COUNT_NOR {
 
 	gatk --java-options "-Xmx50g" DenoiseReadCounts \\
 		-I ${cram[normal_idx]}.hdf5 \\
-		--count-panel-of-normals ${PON[sex[normal_idx]]} \\
+		--count-panel-of-normals ${PON} \\
 		--standardized-copy-ratios ${id[normal_idx]}.standardizedCR.tsv \\
 		--denoised-copy-ratios ${id[normal_idx]}.denoisedCR.tsv
 	
