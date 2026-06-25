@@ -17,7 +17,7 @@ process COPY_FASTQ {
 process BWA_ALIGN_SHARDED {
 	tag "$shard $id"
 	label "process_high"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
     input:
 		val(K_size)
@@ -45,7 +45,7 @@ process BWA_ALIGN_SHARDED {
 
 process BWA_MERGE_SHARDS {
 	tag "$id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 
 	input: 
@@ -69,7 +69,7 @@ process BWA_MERGE_SHARDS {
 
 process DELETE_FASTQ {
 	tag "$id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_low"
 	
 	input:
@@ -86,7 +86,7 @@ process DELETE_FASTQ {
 
 process BAM_CRAM_ALL {
 	tag "$id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 
 	input: 
@@ -111,7 +111,7 @@ process BAM_CRAM_ALL {
 
 process LOCUS_COLLECTOR {
 	tag "$shard_name $id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 	maxErrors 5
 
@@ -135,7 +135,7 @@ process LOCUS_COLLECTOR {
 // This is the bottle-neck for the process completeion 
 process DEDUP {
 	tag "$shard_name $id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 
 	input:
@@ -167,7 +167,7 @@ process DEDUP {
 
 process DEDUP_METRICS_MERGE {
 	tag "$id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
 	input:
 		tuple	val(id), path(dedup)
@@ -182,11 +182,8 @@ process DEDUP_METRICS_MERGE {
 
 process SENTIEON_QC {
 	tag "$id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
-	publishDir "$params.outdir/$params.subdir/qc", 
-				mode: 'copy', 
-				overwrite: 'true'
 	cache 'deep'
 	time '2h'
 
@@ -194,8 +191,16 @@ process SENTIEON_QC {
 		path(params.genome_file)
 		tuple	val(id), path(cram), path(crai), path(bai), path(dedup)
 
-	output:
-		tuple	val(id), path("${id}.QC")
+	output:	tuple ( 
+					val(id),
+					path("mq_metrics.txt"),
+					path("qd_metrics.txt"),
+					path("gc_summary.txt"),
+					path("gc_metrics.txt"),
+					path("aln_metrics.txt"),
+					path("is_metrics.txt"),
+					path("wgs_metrics.txt")
+				)
 
 	"""
 	sentieon driver \
@@ -208,13 +213,41 @@ process SENTIEON_QC {
 		--algo AlignmentStat aln_metrics.txt \
 		--algo InsertSizeMetricAlgo is_metrics.txt \
 		--algo WgsMetricsAlgo wgs_metrics.txt
-	qc_sentieon.pl ${id} wgs > ${id}.QC
 	"""
 }
 
+process COLLECT_QC {
+	tag "$id"
+	label "process_medium"
+	publishDir "$params.outdir/$params.subdir/qc", 
+				mode: 'copy', 
+				overwrite: 'true'
+
+	input:	tuple ( 
+					val(id),
+					path("mq_metrics.txt"),
+					path("qd_metrics.txt"),
+					path("gc_summary.txt"),
+					path("gc_metrics.txt"),
+					path("aln_metrics.txt"),
+					path("is_metrics.txt"),
+					path("wgs_metrics.txt"),
+					path(dedup)
+				)
+
+	output:
+		tuple	val(id), path("${id}.QC")
+	
+	"""
+	qc_sentieon.pl ${id} wgs > ${id}.QC
+	"""
+
+}
+
+
 process BQSR {
 	tag "$shard_name $id"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 	cache 'deep'
 	errorStrategy 'retry'
@@ -275,7 +308,7 @@ process BQSR {
 process MERGE_BQSR {
 	tag "$id"
 	label "process_low"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
 	input:
 		tuple val(id), path(tables) 
@@ -294,7 +327,7 @@ process MERGE_BQSR {
 process MERGE_DEDUP_CRAM {
 	tag "$id"
 	label "process_low"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	publishDir "$params.outdir/$params.subdir/bam",
 				mode: 'copy',
 				overwrite: 'true'
@@ -322,7 +355,7 @@ process MERGE_DEDUP_CRAM {
 process CRAM_TO_BAM {
 	tag "$id"
 	label "process_high"
-	container = '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 
 	input:
 		path(params.genome_file)
@@ -363,7 +396,7 @@ process QC_TO_CDM {
 
 process TNSCOPE {
 	tag "$shard_name $smpl_id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 	errorStrategy 'retry'
 	maxErrors 5
@@ -469,7 +502,7 @@ process TNSCOPE {
 
 process MERGE_VCF {
 	tag "$id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_medium"
 
 	input:
@@ -493,7 +526,7 @@ process MERGE_VCF {
 
 process DNASCOPE_TUM {
 	tag "$group $smpl_id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 	errorStrategy 'retry'
 	maxErrors 5
@@ -537,7 +570,7 @@ process DNASCOPE_TUM {
 
 process DNASCOPE_NOR {
 	tag "$group $smpl_id"
-	container =   '/fs1/resources/containers/wgs_active.sif'
+	container "${params.container_sentieon}"
 	label "process_high"
 	errorStrategy 'retry'
 	maxErrors 5
@@ -873,11 +906,16 @@ process FILTER_WITH_PANEL_SNV {
 		if (panel_info == "solid" ) { 
 			"""
 			filter_with_panel_snv.pl ${vcf} ${snv_panel} ${should_hard_filter} > ${group}.agg.pon.vep.panel.vcf
+			fix_vep_gnomad.pl ${group}.agg.pon.vep.panel.vcf  > ${group}.agg.pon.vep.panel.fix.vcf
+			mv ${group}.agg.pon.vep.panel.fix.vcf ${group}.agg.pon.vep.panel.vcf
+			
 			"""
 		}
 		else {
 			"""
 			filter_with_panel_snv_al.pl ${vcf} ${snv_panel} ${should_hard_filter} > ${group}.agg.pon.vep.panel.vcf
+			fix_vep_gnomad.pl ${group}.agg.pon.vep.panel.vcf  > ${group}.agg.pon.vep.panel.fix.vcf
+			mv ${group}.agg.pon.vep.panel.fix.vcf ${group}.agg.pon.vep.panel.vcf
 			"""
 		}
 }
@@ -989,7 +1027,7 @@ process GATKCOV_BAF {
 	input:
 		path(params.GATK_GNOMAD)
 		path(params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
 
 	output:
 		tuple	val(group), val(id), val(type), path ("${id}.allelicCounts.tsv")
@@ -1013,19 +1051,22 @@ process GATKCOV_COUNT_TUM {
 
 	input:
 		path (params.COV_INTERVAL_LIST)
-		path (params.GATK_PON_FEMALE)
-		path (params.GATK_PON_MALE)
 		path {params.GENOMEDICT}
 		path (params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		val (sequencing)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
 
 	output:
 		tuple val (group), val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
 		tuple val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
 
 	script:
-		
-		PON = [F: params.GATK_PON_FEMALE, M: params.GATK_PON_MALE]
+		def config = sequencing[platform[0]]
+		println "DEBUG: sequencing = ${sequencing}"
+        println "DEBUG: platform = ${platform}"
+		println "DEBUG: config 	= ${config}"
+		def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+		println "DEBUG: PON 	= ${PON}"
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T'  }
 
 	"""
@@ -1039,7 +1080,7 @@ process GATKCOV_COUNT_TUM {
 
 	gatk --java-options "-Xmx50g" DenoiseReadCounts \\
 		-I ${cram[tumor_idx]}.hdf5 \\
-		--count-panel-of-normals ${PON[sex[tumor_idx]]} \\
+		--count-panel-of-normals ${PON} \\
 		--standardized-copy-ratios ${id[tumor_idx]}.standardizedCR.tsv \\
 		--denoised-copy-ratios ${id[tumor_idx]}.denoisedCR.tsv
 	
@@ -1106,11 +1147,10 @@ process GATKCOV_COUNT_NOR {
 
 	input:
 		path (params.COV_INTERVAL_LIST)
-		path (params.GATK_PON_FEMALE)
-		path (params.GATK_PON_MALE)
 		path {params.GENOMEDICT}
 		path (params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		val (sequencing)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type),val(platform)
 
 	output:
 		tuple	val(group), val("${id[normal_idx]}"),  path("${id[normal_idx]}.standardizedCR.tsv"), path("${id[normal_idx]}.denoisedCR.tsv")
@@ -1118,7 +1158,8 @@ process GATKCOV_COUNT_NOR {
 
 	script:
 		
-		PON = [F: params.GATK_PON_FEMALE, M: params.GATK_PON_MALE]
+		def config = sequencing[platform[0]]
+		def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
 		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N'  }
 
 
@@ -1134,7 +1175,7 @@ process GATKCOV_COUNT_NOR {
 
 	gatk --java-options "-Xmx50g" DenoiseReadCounts \\
 		-I ${cram[normal_idx]}.hdf5 \\
-		--count-panel-of-normals ${PON[sex[normal_idx]]} \\
+		--count-panel-of-normals ${PON} \\
 		--standardized-copy-ratios ${id[normal_idx]}.standardizedCR.tsv \\
 		--denoised-copy-ratios ${id[normal_idx]}.denoisedCR.tsv
 	
@@ -1257,7 +1298,7 @@ process GENERATE_GENS_DATA {
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 
-	echo "gens load sample --sample-id ${id}_${assay} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
 
@@ -1292,9 +1333,10 @@ process GENERATE_GENS_DATA_NOR {
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 	
-	echo "gens load sample --sample-id ${id}_${assay} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
+
 
 process COYOTE {
 	tag "$group"
@@ -1315,8 +1357,7 @@ process COYOTE {
 	if( lims_id.size() >= 2 ) {
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
-		
-		assay1 = assay[0]
+
 		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
 		// def gens_normal = ${sampleID[normal_idx]} + ${assay}
 
@@ -1329,15 +1370,14 @@ process COYOTE {
 			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
 			--clarity-sample-id ${lims_id[tumor_idx]} \\
 			--build 38 \\
-        	--gens ${sampleID[tumor_idx]}_${assay1} \\
-			--gensNorm ${sampleID[normal_idx]}_${assay1} \\
+        	--gens ${sampleID[tumor_idx]} \\
+			--gensNorm ${sampleID[normal_idx]} \\
 			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
 		"""
 	}
 	else {
 		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 
-		assay1 = assay[0] 
 		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
 		
 		"""
@@ -1349,7 +1389,7 @@ process COYOTE {
 			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
 			--clarity-sample-id ${lims_id[tumor_idx]} \\
 			--build 38 \\
-        	--gens ${sampleID[tumor_idx]}_${assay} \\
+        	--gens ${sampleID[tumor_idx]} \\
 			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
 
 		"""

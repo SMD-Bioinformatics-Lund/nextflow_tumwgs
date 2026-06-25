@@ -29,6 +29,7 @@ def create_fastq_channel(LinkedHashMap row) {
 	meta.diagnosis          = row.diagnosis
 	meta.sex				= row.sex
 	meta.type               = row.type
+	meta.platform			= row.platform
 	meta.clarity_sample_id  = row.clarity_sample_id
 	meta.ffpe               = (row.containsKey("ffpe") ? row.ffpe : false)
 	meta.purity             = (row.containsKey("purity") ? row.purity : false)
@@ -63,6 +64,7 @@ def create_samples_channel(LinkedHashMap row) {
 	meta.diagnosis          = row.diagnosis
 	meta.sex				= row.sex
 	meta.type               = row.type
+	meta.platform			= row.platform
 	meta.clarity_sample_id  = row.clarity_sample_id
 	meta.ffpe               = (row.containsKey("ffpe") ? row.ffpe : false)
 	meta.purity             = (row.containsKey("purity") ? row.purity : false)

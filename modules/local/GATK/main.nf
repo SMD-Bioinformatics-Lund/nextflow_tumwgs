@@ -58,7 +58,7 @@ process GATKCOV_BAF {
 }
 
 
-process GATKCOV_COUNT {
+/* process GATKCOV_COUNT {
     label 'process_high'
     tag "${meta.id}"
 
@@ -77,16 +77,18 @@ process GATKCOV_COUNT {
         def args        = task.ext.args      ?: ''
         def args2       = task.ext.args2     ?: ''
         def prefix      = task.ext.prefix    ?: "${meta.id}"
-        def sex         = task.ext.sex       ?: "${meta.sex}"    
-        def PON         // Initialize the PON variable
+        def sex         = task.ext.sex       ?: "${meta.sex}" 
+        def platform    = task.ext.platform  ?: "${meta.platform}"  
+        def config      = params.sequencing[platform]
+        def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
         def avail_mem   = 52288
 
         // Set PON based on sex
-        if (sex == "F") {
-            PON = params.GATK_PON_FEMALE
-        } else {
-            PON = params.GATK_PON_MALE
-        }
+        // if (sex == "F") {
+        //     PON = params.GATK_PON_FEMALE
+        // } else {
+        //     PON = params.GATK_PON_MALE
+        // }
         
         // Handle memory allocation
         if (!task.memory) {
@@ -125,8 +127,12 @@ process GATKCOV_COUNT {
         """
 
     stub:
-        def prefix = task.ext.prefix ?: "${meta.id}"
-        def sex    = task.ext.sex    ?: "${meta.sex}" 
+        def prefix      = task.ext.prefix    ?: "${meta.id}"
+        def sex         = task.ext.sex       ?: "${meta.sex}" 
+        def platform    = task.ext.platform  ?: "${meta.platform}"  
+        def config      = params.sequencing[platform]
+        def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+        def avail_mem   = 52288
         """
         export THEANO_FLAGS="base_compiledir=."
         export MKL_NUM_THREADS=${task.cpus}
@@ -143,8 +149,106 @@ process GATKCOV_COUNT {
             gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
         END_VERSIONS
         """    
-}
+} */
 
+
+
+process GATKCOV_COUNT {
+    label 'process_high'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta), file(cram), file(crai), file(bai)
+
+    output:
+        tuple val(group), val(meta), file("*.standardizedCR.tsv"), file("*.denoisedCR.tsv"), emit: gatk_count
+        path "versions.yml",                                                                 emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        // Defaults
+        def args        = task.ext.args      ?: ''
+        def args2       = task.ext.args2     ?: ''
+        def prefix      = task.ext.prefix    ?: "${meta.id}"
+        def sex         = task.ext.sex       ?: "${meta.sex}" 
+        def platform    = task.ext.platform  ?: "${meta.platform}"  
+
+        // Validate platform
+        def config = params.sequencing[platform]
+        if (!config) {
+            error "Platform '$platform' not found in params.sequencing. Available: ${params.sequencing.keySet()}"
+        }
+
+        // Determine PON based on sex
+        def PON = (sex == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+        if (!PON) {
+            error "PON file not defined for sex '$sex' and platform '$platform'"
+        }
+
+        // Memory: default 50GB, otherwise 80% of assigned memory
+        def avail_mem = 52288   // MB
+        if (!task.memory) {
+            log.info '[GATK] Available memory not known - defaulting to 50GB. Specify process memory requirements to change this.'
+        } else {
+            avail_mem = (task.memory.mega * 0.8).intValue()
+        }
+
+        """
+        export THEANO_FLAGS="base_compiledir=."
+        export MKL_NUM_THREADS=${task.cpus}
+        export OMP_NUM_THREADS=${task.cpus}
+        set +u
+        source activate gatk   # or remove if using container
+
+        gatk CollectReadCounts \\
+            -I ${cram} \\
+            $args \\
+            -O ${cram}.hdf5
+
+        gatk --java-options "-Xmx${avail_mem}M" DenoiseReadCounts \\
+            -I ${cram}.hdf5  \\
+            --count-panel-of-normals ${PON} \\
+            --standardized-copy-ratios ${prefix}.standardizedCR.tsv \\
+            --denoised-copy-ratios ${prefix}.denoisedCR.tsv
+
+        gatk PlotDenoisedCopyRatios \\
+            --standardized-copy-ratios ${prefix}.standardizedCR.tsv \\
+            --denoised-copy-ratios ${prefix}.denoisedCR.tsv \\
+            $args2 \\
+            --output . --output-prefix ${prefix}
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+        END_VERSIONS
+        """
+
+    stub:
+        // same as script but only touch files and output version
+        def prefix      = task.ext.prefix    ?: "${meta.id}"
+        def sex         = task.ext.sex       ?: "${meta.sex}" 
+        def platform    = task.ext.platform  ?: "${meta.platform}"  
+        def config      = params.sequencing[platform]
+        def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+        """
+        export THEANO_FLAGS="base_compiledir=."
+        export MKL_NUM_THREADS=${task.cpus}
+        export OMP_NUM_THREADS=${task.cpus}
+        set +u
+        source activate gatk
+
+        echo "Sex: $sex, PON: $PON"   # for debugging
+        touch ${prefix}.standardizedCR.tsv 
+        touch ${prefix}.denoisedCR.tsv
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+        END_VERSIONS
+        """
+}
 
 process GATKCOV_CALL {
     label 'process_high'
