@@ -1,0 +1,3 @@
+clarity_sample_id,id,type,assay,sex,diagnosis,group,clarity_pool_id,platform,read1,read2
+GIAB000A001,HG008-T-NX,T,tumwgs-solid-dev,F,other,HG008-T-wgs,25-250828,illuminax,/fs2/seqdata/restored/giab_somatic/HG008-T_TTCCTGTT-AAGATACT_R1_concat.fq.gz,/fs2/seqdata/restored/giab_somatic/HG008-T_TTCCTGTT-AAGATACT_R2_concat.fq.gz
+GIAB000A002,HG008-N-D-NX,N,tumwgs-solid-dev,F,other,HG008-T-wgs,25-250828,illuminax,/fs2/seqdata/restored/giab_somatic/HG008-N-D_CGGACAAC-AATCCGGA_R1_concat.fq.gz,/fs2/seqdata/restored/giab_somatic/HG008-N-D_CGGACAAC-AATCCGGA_R2_concat.fq.gz
