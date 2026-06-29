@@ -10,6 +10,7 @@ include { VERIFYBAMID2         } from '../../modules/local/verfifybam2/main'
 include { MERGE_QC_JSON        } from '../../modules/local/qc/main'
 include { CREATE_PED_FILES     } from '../../modules/local/somalier/main'
 include { SOMALIER_QC          } from '../../modules/local/somalier/main'
+include { SOMALIER2CDM          } from '../../modules/local/somalier/main'
 
 
 
@@ -69,6 +70,9 @@ workflow BAM_QC {
         ch_somalier.view { println "Somalier input: ${it}"  }
         SOMALIER_QC ( ch_somalier )
         ch_versions = ch_versions.mix(SOMALIER_QC.out.versions)
+
+        SOMALIER2CDM ( SOMALIER_QC.out.somalier_check )
+        ch_versions = ch_versions.mix(SOMALIER2CDM.out.versions)
 
         MERGE_QC_JSON (ch_qc_json)
         ch_versions = ch_versions.mix(MERGE_QC_JSON.out.versions)

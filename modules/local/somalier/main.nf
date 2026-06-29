@@ -93,3 +93,71 @@ process SOMALIER_QC {
         """
 }
 
+
+process SOMALIER2CDM {
+    label "process_single"
+    tag "${meta.id}"
+
+    input: 
+        tuple val(group), val(meta), file(samples_stats), file(pairs_stats),  file(groups), file(contamination)
+
+    output:
+        tuple val(group), val(meta), path("*somalier.json"), emit: json
+        tuple val(group), val(meta), path("*peddy2cdm"), emit: cdm
+        path "versions.yml", emit: versions
+
+    script:
+        def args    = task.ext.args     ?: ''
+        def args2   = task.ext.args2    ?: ''
+
+        def tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+        def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+        def tumor_id = meta.id[tumor_idx]
+        def normal_id = meta.id[normal_idx]
+        def tumor_run = meta.sequencing_run[tumor_idx]
+        def normal_run = meta.sequencing_run[normal_idx]
+
+        def tumor_arg =  "${tumor_id}:${tumor_run}"
+        def normal_arg =  "${normal_id}:${normal_run}"
+            
+        """
+        somalier2json.py \
+        --somalier $samples_stats \
+        --sample $tumor_arg \
+        --sample $normal_arg \
+        $args $args2
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+        END_VERSIONS
+        """
+        
+    stub:
+        def args    = task.ext.args     ?: ''
+        def args2   = task.ext.args2    ?: ''
+
+        def tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+        def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+        def tumor_id = meta.id[tumor_idx]
+        def normal_id = meta.id[normal_idx]
+        def tumor_run = meta.sequencing_run[tumor_idx]
+        def normal_run = meta.sequencing_run[normal_idx]
+
+        def tumor_arg =  "${tumor_id}:${tumor_run}"
+        def normal_arg =  "${normal_id}:${normal_run}"
+
+        """
+        echo "somalier2json.py --somalier $samples_stats --sample $tumor_arg --sample $normal_arg $args $args2"
+        touch "${tumor_id}.somalier.json"
+        touch "${tumor_id}.peddy2cdm"
+        touch "${normal_id}.somalier.json"
+        touch "${normal_id}.peddy2cdm"
+        
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+        END_VERSIONS
+        """
+}
+
