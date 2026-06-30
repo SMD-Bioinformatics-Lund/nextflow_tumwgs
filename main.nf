@@ -337,7 +337,7 @@ workflow cnv_calling_workflow {
 
         gatkCovCallN =  GATKCOV_BAF.out.join(GATKCOV_COUNT_NOR.out[0],  by:1, remainder:true).groupTuple(by:1)
         
-        gatkCovCallN.view()
+        if( params.debug ) gatkCovCallN.view()
         GATKCOV_CALL_NOR (  params.GENOMEDICT,
                             gatkCovCallN   )
                             
