@@ -308,8 +308,7 @@ workflow cnv_calling_workflow {
     main:
 
         gatkBaf = metaId.flatten().first().combine(cram).join(gatkid, by:1)
-        gatkBaf.view()
-
+        if( params.debug ) gatkBaf.view()
         GATKCOV_BAF (   params.GATK_GNOMAD ,
                         params.genome_file ,
                         gatkBaf )
@@ -324,7 +323,7 @@ workflow cnv_calling_workflow {
         
         
         gatkcovcall =  GATKCOV_BAF.out.join(GATKCOV_COUNT_TUM.out[0],  by:1, remainder:true).groupTuple(by:1)
-        gatkcovcall.view()
+        if( params.debug ) gatkcovcall.view()
 
         GATKCOV_CALL_TUM (  params.GENOMEDICT,
                             gatkcovcall  )
@@ -338,7 +337,7 @@ workflow cnv_calling_workflow {
 
         gatkCovCallN =  GATKCOV_BAF.out.join(GATKCOV_COUNT_NOR.out[0],  by:1, remainder:true).groupTuple(by:1)
         
-        gatkCovCallN.view()
+        if( params.debug ) gatkCovCallN.view()
         GATKCOV_CALL_NOR (  params.GENOMEDICT,
                             gatkCovCallN   )
                             
