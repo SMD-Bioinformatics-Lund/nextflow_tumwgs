@@ -4,7 +4,7 @@
 
 - Fixes automatically different illuminia platforms based on the csv information
 - Updated the PONs for the cnv from NovaseX
-- Support for gene fusions from duplication and deletion events in the fusion calling.
+- Support for gene fusions from duplication and deletion events in the fusion calling. 
 
 ## v2.0.5
 
