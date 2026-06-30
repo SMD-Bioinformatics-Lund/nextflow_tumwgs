@@ -1157,9 +1157,12 @@ process GATKCOV_COUNT_NOR {
 
 	script:
 		
-		def config = sequencing[platform[0]]
-		def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
-		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N'  }
+		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
+		if( normal_idx < 0 ) throw new IllegalArgumentException("No normal sample found in type=${type} for group=${group}")
+		def platformKey = platform[normal_idx] ?: platform[0]
+		def config = sequencing[platformKey]
+		if( !config ) throw new IllegalArgumentException("Unknown sequencing platform '${platformKey}'. Supported: ${sequencing.keySet().join(', ')}")
+		def PON = (sex[normal_idx] == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
 
 
 	"""
