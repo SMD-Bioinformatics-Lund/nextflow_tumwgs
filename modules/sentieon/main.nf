@@ -1061,13 +1061,12 @@ process GATKCOV_COUNT_TUM {
 		tuple val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
 
 	script:
-		def config = sequencing[platform[0]]
-		println "DEBUG: sequencing = ${sequencing}"
-        println "DEBUG: platform = ${platform}"
-		println "DEBUG: config 	= ${config}"
-		def PON = sex == 'F' ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
-		println "DEBUG: PON 	= ${PON}"
-		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T'  }
+		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
+		if( tumor_idx < 0 ) throw new IllegalArgumentException("No tumor sample found in type=${type} for group=${group}")
+		def platformKey = platform[tumor_idx] ?: platform[0]
+		def config = sequencing[platformKey]
+		if( !config ) throw new IllegalArgumentException("Unknown sequencing platform '${platformKey}'. Supported: ${sequencing.keySet().join(', ')}")
+		def PON = (sex[tumor_idx] == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
 
 	"""
 	source activate gatk4-env
