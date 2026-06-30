@@ -301,34 +301,43 @@ workflow sv_calling_workflow {
 
 workflow cnv_calling_workflow {
     take:
+        metaId
         gatkid
         cram
      
     main:
-        gatkBaf = metaId.flatten().first().combine(cram).join(gatkid, by:1)
 
+        gatkBaf = metaId.flatten().first().combine(cram).join(gatkid, by:1)
+        if( params.debug ) gatkBaf.view()
         GATKCOV_BAF (   params.GATK_GNOMAD ,
                         params.genome_file ,
                         gatkBaf )
         gatkCovCount =  gatkBaf.groupTuple(by:1)
 
+
         GATKCOV_COUNT_TUM ( params.COV_INTERVAL_LIST,
-                            params.GATK_PON_FEMALE,
-                            params.GATK_PON_MALE,
                             params.GENOMEDICT,
                             params.genome_file,
+                            params.sequencing,
                             gatkCovCount    )
+        
+        
         gatkcovcall =  GATKCOV_BAF.out.join(GATKCOV_COUNT_TUM.out[0],  by:1, remainder:true).groupTuple(by:1)
+        if( params.debug ) gatkcovcall.view()
+
         GATKCOV_CALL_TUM (  params.GENOMEDICT,
                             gatkcovcall  )
 
         GATKCOV_COUNT_NOR ( params.COV_INTERVAL_LIST,
-                            params.GATK_PON_FEMALE,
-                            params.GATK_PON_MALE,
                             params.GENOMEDICT,
                             params.genome_file,
+                            params.sequencing,
                             gatkCovCount    )
+
+
         gatkCovCallN =  GATKCOV_BAF.out.join(GATKCOV_COUNT_NOR.out[0],  by:1, remainder:true).groupTuple(by:1)
+        
+        if( params.debug ) gatkCovCallN.view()
         GATKCOV_CALL_NOR (  params.GENOMEDICT,
                             gatkCovCallN   )
                             
@@ -393,6 +402,7 @@ genomeShards   = params.genomic_shards_num
 K_size = 100000000
 mode =  file(params.csv).countLines() > 2 ? "paired" : "unpaired"
 
+
 Channel
     .from( 0..bwa_num_shards-1)
     .set { bwa_shards }
@@ -430,7 +440,7 @@ Channel
 Channel
     .fromPath(params.csv)
     .splitCsv(header:true)
-    .map{ row-> tuple(row.group, row.id, row.sex, row.type) }
+    .map{ row-> tuple(row.group, row.id, row.sex, row.type, row.platform) }
     .set { gatkId }
 
 Channel
@@ -443,46 +453,51 @@ Channel
 /*  Main workflow  */
 workflow {
 
-    sentieon_workflow (  K_size,
+    sentieon_workflow( K_size,
                         genomeShards,
                         bwa_num_shards, 
                         bwa_shards, 
                         fastq_sharded)
-    cdm_qc_workflow (   cron, 
+    cdm_qc_workflow( cron, 
                         sentieon_workflow.out.sentieonqc )
-    tnscope_workflow (  genomeShards,
+    tnscope_workflow( genomeShards,
                         metaId,
                         sentieon_workflow.out.bqsr,
                         sentieon_workflow.out.dedup,
                         shards )
-    dnascope_tum_workflow ( metaId,
+    dnascope_tum_workflow( metaId,
                             sentieon_workflow.out.dedup )
-    dnascope_nor_workflow ( metaId,
+    dnascope_nor_workflow( metaId,
                             sentieon_workflow.out.dedup )
-    snv_calling_workflow (  mode,
+    snv_calling_workflow( mode,
                             beds,
                             sentieon_workflow.out.bam,
                             tnscope_workflow.out.vcf,
                             fastq_sharded,
                             metaId  )
-    sv_calling_workflow (   mode,
-                            sentieon_workflow.out.cram,
-                            metaId)
-    cnv_calling_workflow (  gatkId,
-                            sentieon_workflow.out.cram    )
+    sv_calling_workflow( mode,
+                         sentieon_workflow.out.cram,
+                         metaId)
+    cnv_calling_workflow(   metaId,
+                            gatkId,
+                          sentieon_workflow.out.cram    )
 
-    gens_tum_workflow (cnv_calling_workflow.out.tumCov,        dnascope_tum_workflow.out.vcf, metaCoyote )                   
+    gens_tum_workflow( cnv_calling_workflow.out.tumCov, 
+                       dnascope_tum_workflow.out.vcf, 
+                       metaCoyote )                   
 
-    gens_nor_workflow ( cnv_calling_workflow.out.norCov,            dnascope_nor_workflow.out.vcf, metaCoyote ) 
+    gens_nor_workflow( cnv_calling_workflow.out.norCov, 
+                       dnascope_nor_workflow.out.vcf, 
+                       metaCoyote ) 
 
     snv_calling_workflow.out.vcf.view()
     sv_calling_workflow.out.vcf.view()
     cnv_calling_workflow.out.vcf.view() 
-    coyote_workflow (   metaCoyote,
-                        snv_calling_workflow.out.vcf,
-                        sv_calling_workflow.out.vcf,
-                        cnv_calling_workflow.out.vcf,
-                        cnv_calling_workflow.out.tumplot )    
+    coyote_workflow ( metaCoyote,
+                      snv_calling_workflow.out.vcf,
+                      sv_calling_workflow.out.vcf,
+                      cnv_calling_workflow.out.vcf,
+                      cnv_calling_workflow.out.tumplot )    
 
     
 }
