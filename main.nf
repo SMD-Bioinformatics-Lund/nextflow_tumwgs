@@ -308,8 +308,7 @@ workflow cnv_calling_workflow {
     main:
 
         gatkBaf = metaId.flatten().first().combine(cram).join(gatkid, by:1)
-        gatkBaf.view()
-
+        if( params.debug ) gatkBaf.view()
         GATKCOV_BAF (   params.GATK_GNOMAD ,
                         params.genome_file ,
                         gatkBaf )
