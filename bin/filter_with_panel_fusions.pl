@@ -20,7 +20,7 @@ system("zgrep ^#CHROM $vcf_fn");
 my %partner_seen;
 
 while ( my $v = $vcf->next_var() ) {
-    next unless $v->{INFO}->{SVTYPE} eq "BND";
+    next unless $v->{INFO}->{SVTYPE} eq "BND" || $v->{INFO}->{SVTYPE} eq "DUP" ||$v->{INFO}->{SVTYPE} eq "DEL";
 
     next if $partner_seen{ $v->{CHROM} . ":" . $v->{POS} };
 

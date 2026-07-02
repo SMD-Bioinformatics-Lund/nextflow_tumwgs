@@ -1027,7 +1027,7 @@ process GATKCOV_BAF {
 	input:
 		path(params.GATK_GNOMAD)
 		path(params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
 
 	output:
 		tuple	val(group), val(id), val(type), path ("${id}.allelicCounts.tsv")
@@ -1051,21 +1051,24 @@ process GATKCOV_COUNT_TUM {
 
 	input:
 		path (params.COV_INTERVAL_LIST)
-		path (params.GATK_PON_FEMALE)
-		path (params.GATK_PON_MALE)
 		path {params.GENOMEDICT}
 		path (params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		val (sequencing)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
 
 	output:
-		tuple val (group), val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
-		tuple val("${id[tumor_idx]}"),  path("${id[tumor_idx]}.standardizedCR.tsv"), path("${id[tumor_idx]}.denoisedCR.tsv")
+		tuple val (group), val("${id[tumor_idx]}"),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
+		tuple val(id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
 
 	script:
 		
-		PON = [F: params.GATK_PON_FEMALE, M: params.GATK_PON_MALE]
-		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T'  }
-
+		def tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
+		if( tumor_idx < 0 ) throw new IllegalArgumentException("No tumor sample found in type=${type} for group=${group}")
+		def platformKey = platform[tumor_idx] ?: platform[0]
+		def config = sequencing[platformKey]
+		if( !config ) throw new IllegalArgumentException("Unknown sequencing platform '${platformKey}'. Supported: ${sequencing.keySet().join(', ')}")
+		def PON = (sex[tumor_idx][0] == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+		
 	"""
 	source activate gatk4-env
 	gatk CollectReadCounts \\
@@ -1077,7 +1080,7 @@ process GATKCOV_COUNT_TUM {
 
 	gatk --java-options "-Xmx50g" DenoiseReadCounts \\
 		-I ${cram[tumor_idx]}.hdf5 \\
-		--count-panel-of-normals ${PON[sex[tumor_idx]]} \\
+		--count-panel-of-normals ${PON} \\
 		--standardized-copy-ratios ${id[tumor_idx]}.standardizedCR.tsv \\
 		--denoised-copy-ratios ${id[tumor_idx]}.denoisedCR.tsv
 	
@@ -1144,22 +1147,24 @@ process GATKCOV_COUNT_NOR {
 
 	input:
 		path (params.COV_INTERVAL_LIST)
-		path (params.GATK_PON_FEMALE)
-		path (params.GATK_PON_MALE)
 		path {params.GENOMEDICT}
 		path (params.genome_file)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type)
+		val (sequencing)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type),val(platform)
 
 	output:
-		tuple	val(group), val("${id[normal_idx]}"),  path("${id[normal_idx]}.standardizedCR.tsv"), path("${id[normal_idx]}.denoisedCR.tsv")
-		tuple	val("${id[normal_idx]}"),  path("${id[normal_idx]}.standardizedCR.tsv"), path("${id[normal_idx]}.denoisedCR.tsv")
+		tuple	val(group), val("${id[normal_idx]}"),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
+		tuple	val(id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
 
 	script:
+
+		def normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
+		if( normal_idx < 0 ) throw new IllegalArgumentException("No normal sample found in type=${type} for group=${group}")
+		def platformKey = platform[normal_idx] ?: platform[0]
+		def config = sequencing[platformKey]
+		if( !config ) throw new IllegalArgumentException("Unknown sequencing platform '${platformKey}'. Supported: ${sequencing.keySet().join(', ')}")
+		def PON = (sex[normal_idx][0] == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
 		
-		PON = [F: params.GATK_PON_FEMALE, M: params.GATK_PON_MALE]
-		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N'  }
-
-
 	"""
 	source activate gatk4-env
 	
@@ -1172,7 +1177,7 @@ process GATKCOV_COUNT_NOR {
 
 	gatk --java-options "-Xmx50g" DenoiseReadCounts \\
 		-I ${cram[normal_idx]}.hdf5 \\
-		--count-panel-of-normals ${PON[sex[normal_idx]]} \\
+		--count-panel-of-normals ${PON} \\
 		--standardized-copy-ratios ${id[normal_idx]}.standardizedCR.tsv \\
 		--denoised-copy-ratios ${id[normal_idx]}.denoisedCR.tsv
 	

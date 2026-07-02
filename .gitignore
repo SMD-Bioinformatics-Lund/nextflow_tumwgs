@@ -11,3 +11,4 @@ __test/
 main_test.nf
 transfer.log
 git.hash
+test.nf

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v2.0.6
+
+- Fixes automatically different illuminia platforms based on the csv information
+- Updated the PONs for the cnv from NovaseX
+- Support for gene fusions from duplication and deletion events in the fusion calling. 
+
 ## v2.0.5
 
 ### Hot fix the vep gnomad filter
