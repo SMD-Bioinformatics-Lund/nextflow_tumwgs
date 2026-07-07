@@ -1054,11 +1054,11 @@ process GATKCOV_COUNT_TUM {
 		path {params.GENOMEDICT}
 		path (params.genome_file)
 		val (sequencing)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform), val (tumor_id)
 
 	output:
-		tuple val (group), val("${id[tumor_idx]}"),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
-		tuple val(id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
+		tuple val (group), val(tumor_id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
+		tuple val(tumor_id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
 
 	script:
 		
@@ -1068,6 +1068,7 @@ process GATKCOV_COUNT_TUM {
 		def config = sequencing[platformKey]
 		if( !config ) throw new IllegalArgumentException("Unknown sequencing platform '${platformKey}'. Supported: ${sequencing.keySet().join(', ')}")
 		def PON = (sex[tumor_idx][0] == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+		def sample = id[tumor_idx]
 		
 	"""
 	source activate gatk4-env
@@ -1150,11 +1151,11 @@ process GATKCOV_COUNT_NOR {
 		path {params.GENOMEDICT}
 		path (params.genome_file)
 		val (sequencing)
-		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type),val(platform)
+		tuple	val(id), val(gr), path(cram), path(crai), path(bai), val(group), val(sex), val(type), val(platform),val(normal_id)
 
 	output:
-		tuple	val(group), val("${id[normal_idx]}"),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
-		tuple	val(id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
+		tuple val (group), val(normal_id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
+		tuple val (normal_id),  path("*.standardizedCR.tsv"), path("*.denoisedCR.tsv")
 
 	script:
 
@@ -1164,6 +1165,7 @@ process GATKCOV_COUNT_NOR {
 		def config = sequencing[platformKey]
 		if( !config ) throw new IllegalArgumentException("Unknown sequencing platform '${platformKey}'. Supported: ${sequencing.keySet().join(', ')}")
 		def PON = (sex[normal_idx][0] == 'F') ? config.GATK_PON_FEMALE : config.GATK_PON_MALE
+		def sample = id[normal_idx]
 		
 	"""
 	source activate gatk4-env

@@ -314,13 +314,17 @@ workflow cnv_calling_workflow {
                         gatkBaf )
         gatkCovCount =  gatkBaf.groupTuple(by:1)
 
-
+        prepared_tumor_ch = gatkCovCount.map { id, gr, cram, crai, bai, group, sex, type, platform ->
+            def tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
+            def tumor_id =  id[tumor_idx]
+            return [ id, gr, cram, crai, bai, group, sex, type, platform, tumor_id ]
+        }
+        prepared_tumor_ch.view()    
         GATKCOV_COUNT_TUM ( params.COV_INTERVAL_LIST,
                             params.GENOMEDICT,
                             params.genome_file,
                             params.sequencing,
-                            gatkCovCount    )
-        
+                            prepared_tumor_ch    )
         
         gatkcovcall =  GATKCOV_BAF.out.join(GATKCOV_COUNT_TUM.out[0],  by:1, remainder:true).groupTuple(by:1)
         if( params.debug ) gatkcovcall.view()
@@ -328,11 +332,18 @@ workflow cnv_calling_workflow {
         GATKCOV_CALL_TUM (  params.GENOMEDICT,
                             gatkcovcall  )
 
+            
+        prepared_normal_ch = gatkCovCount.map { id, gr, cram, crai, bai, group, sex, type, platform ->
+            def normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
+            def normal_id =  id[normal_idx]
+            return [ id, gr, cram, crai, bai, group, sex, type, platform, normal_id ]
+        }
+        prepared_normal_ch.view()    
         GATKCOV_COUNT_NOR ( params.COV_INTERVAL_LIST,
                             params.GENOMEDICT,
                             params.genome_file,
                             params.sequencing,
-                            gatkCovCount    )
+                            prepared_normal_ch    )
 
 
         gatkCovCallN =  GATKCOV_BAF.out.join(GATKCOV_COUNT_NOR.out[0],  by:1, remainder:true).groupTuple(by:1)
