@@ -1291,18 +1291,20 @@ process GENERATE_GENS_DATA {
 	input:
 		path(params.GENS_GNOMAD)
 		tuple	val(id), path(gvcf), path(cov_stand), path(cov_denoise)
-		tuple	val(g), val(sampleID), val(type), val(lims_id), val(pool_id), val (assay)
+		tuple	val(group), val(sampleID), val(type), val(lims_id), val(pool_id), val (assay)
 
 	output:
 		tuple	path("${id}.cov.bed.gz"), path("${id}.baf.bed.gz"), path("${id}.cov.bed.gz.tbi"), path("${id}.baf.bed.gz.tbi"), path ("${id}.overview.json.gz")
 		path	("${id}_${assay}.gens")
 
 	script:
+	
+	def group_id = group.contains("-wgs") ? group : group + "-wgs"
 
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 
-	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id} --case-id ${group_id} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
 
@@ -1325,7 +1327,7 @@ process GENERATE_GENS_DATA_NOR {
 	input:
 		path(params.GENS_GNOMAD)
 		tuple	val(id), path(gvcf), path(cov_stand), path(cov_denoise) 
-		tuple	val(g), val(sampleID), val(type), val(lims_id), val(pool_id), val (assay)
+		tuple	val(group), val(sampleID), val(type), val(lims_id), val(pool_id), val (assay)
 
 	output:
 		tuple	path("${id}.cov.bed.gz"), path("${id}.baf.bed.gz"), path("${id}.cov.bed.gz.tbi"), path("${id}.baf.bed.gz.tbi"), path("${id}.overview.json.gz")
@@ -1334,68 +1336,66 @@ process GENERATE_GENS_DATA_NOR {
 	
 	script:
 
+	def group_id = group.contains("-wgs") ? group : group + "-wgs"
+	
 	"""
 	generate_gens_data.pl ${cov_stand} ${gvcf} ${id} ${params.GENS_GNOMAD}
 	
-	echo "gens load sample --sample-id ${id} --case-id ${g} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
+	echo "gens load sample --sample-id ${id} --case-id ${group_id} --genome-build 38 --baf ${params.gens_accessdir}/${id}.baf.bed.gz --coverage ${params.gens_accessdir}/${id}.cov.bed.gz --overview-json ${params.gens_accessdir}/${id}.overview.json.gz" > ${id}_${assay}.gens 
 	"""
 }
 
-
 process COYOTE {
-	tag "$group"
-	label "process_low"	
-	publishDir "${params.crondir}/coyote", 
-				mode: 'copy', 
-				overwrite: true
+    tag "$group"
+    label "process_low"  
+    publishDir "${params.crondir}/coyote", 
+                mode: 'copy', 
+                overwrite: true
 
-	input:
-		tuple 	val(group), path(vcf), path(cnv), path(fusions)
-		tuple	val(g), val(sampleID), val(type), val(lims_id), val(pool_id), val (assay)
-		path (cnvplot)
+    input:
+        tuple  val(group), path(vcf), path(cnv), path(fusions)
+        tuple  val(g), val(sampleID), val(type), val(lims_id), val(pool_id), val(assay)
+        path (cnvplot)
 
-	output:
-		path ("${group}.coyote_wgs")
+    output:
+        path ("${group_id}.coyote_wgs")   // use the modified name
 
-	script:
-	if( lims_id.size() >= 2 ) {
-		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
-		normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
+    script:
+    // Define a new group identifier with "-wgs" if missing
+    def group_id = group.contains("-wgs") ? group : group + "-wgs"
 
-		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
-		// def gens_normal = ${sampleID[normal_idx]} + ${assay}
+    if( lims_id.size() >= 2 ) {
+        tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
+        normal_idx = type.findIndexOf{ it == 'normal' || it == 'N' }
 
-		"""
-			echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
-			--id ${group} --group tumwgs \\
-			--vcf /access/tumwgs/vcf/${vcf} \\
-			--cnv /access/tumwgs/cnv/${cnv} \\
-			--transloc /access/tumwgs/vcf/${fusions} \\
-			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
-			--clarity-sample-id ${lims_id[tumor_idx]} \\
-			--build 38 \\
-        	--gens ${sampleID[tumor_idx]} \\
-			--gensNorm ${sampleID[normal_idx]} \\
-			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
-		"""
-	}
-	else {
-		tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
+        """
+        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
+        --id ${group_id} --group tumwgs \\
+        --vcf /access/tumwgs/vcf/${vcf} \\
+        --cnv /access/tumwgs/cnv/${cnv} \\
+        --transloc /access/tumwgs/vcf/${fusions} \\
+        --cnvprofile /access/tumwgs/cov/${cnvplot} \\
+        --clarity-sample-id ${lims_id[tumor_idx]} \\
+        --build 38 \\
+        --gens ${sampleID[tumor_idx]} \\
+        --gensNorm ${sampleID[normal_idx]} \\
+        --clarity-pool-id ${pool_id[tumor_idx]}" > ${group_id}.coyote_wgs
+        """
+    }
+    else {
+        tumor_idx = type.findIndexOf{ it == 'tumor' || it == 'T' }
 
-		// def gens_tumor = ${sampleID[tumor_idx]} + ${assay}
-		
-		"""
-			echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
-			--id ${group} --group tumwgs \\
-			--vcf /access/tumwgs/vcf/${vcf} \\
-			--cnv /access/tumwgs/cnv/${cnv} \\
-			--transloc /access/tumwgs/vcf/${fusions} \\
-			--cnvprofile /access/tumwgs/cov/${cnvplot} \\
-			--clarity-sample-id ${lims_id[tumor_idx]} \\
-			--build 38 \\
-        	--gens ${sampleID[tumor_idx]} \\
-			--clarity-pool-id ${pool_id[tumor_idx]}" > ${group}.coyote_wgs
-
-		"""
-	}
+        """
+        echo "/data/bnf/scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
+        --id ${group_id} --group tumwgs \\
+        --vcf /access/tumwgs/vcf/${vcf} \\
+        --cnv /access/tumwgs/cnv/${cnv} \\
+        --transloc /access/tumwgs/vcf/${fusions} \\
+        --cnvprofile /access/tumwgs/cov/${cnvplot} \\
+        --clarity-sample-id ${lims_id[tumor_idx]} \\
+        --build 38 \\
+        --gens ${sampleID[tumor_idx]} \\
+        --clarity-pool-id ${pool_id[tumor_idx]}" > ${group_id}.coyote_wgs
+        """
+    }
 }
