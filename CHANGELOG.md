@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v2.0.7
+- Fixed the change of the default reference genome from hg38 with unmasked to hg38 with masked regions for the CNV calling. The CNV calling will now use the hg38 with masked regions as default reference genome.
+- Fixed the issue with name suffix for the wgs sample in the GENS load command. The suffix will now be added to the sample name in the GENS load command.
+
 ## v2.0.6
 
 - Fixes automatically different illuminia platforms based on the csv information
