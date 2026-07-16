@@ -1,8 +1,8 @@
 # CHANGELOG
 
-### v2.0.7
-- Fixed the change of the default reference genome from hg38 with unmasked to hg38 with masked regions for the CNV calling. The CNV calling will now use the hg38 with masked regions as default reference genome.
-- Fixed the issue with name suffix for the wgs sample in the GENS load command. The suffix will now be added to the sample name in the GENS load command.
+## v2.0.7
+ - Changed the default reference genome for CNV calling from unmasked hg38 to hg38 with masked regions. CNV calling now uses the masked hg38 reference by default.
+ - Fixed the missing "-wgs" suffix in the GENS load command by appending it to the case/group id ("--case-id"), when needed.
 
 ## v2.0.6
 
