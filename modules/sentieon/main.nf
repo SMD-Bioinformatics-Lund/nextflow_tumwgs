@@ -1358,7 +1358,7 @@ process COYOTE {
         path (cnvplot)
 
     output:
-        path ("*.coyote_wgs")   // use the modified name
+        path ("*.coyote_wgs")   
 
     script:
     // Define a new group identifier with "-wgs" if missing
