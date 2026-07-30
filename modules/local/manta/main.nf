@@ -6,27 +6,30 @@ process MANTA {
         tuple val(group), val(meta), file(cram), file(crai), file(bai)
 
     output:
-        tuple val(group),val(meta), file("${prefix}_manta.vcf"),                emit: manta_vcf_tumor
-        tuple val(group),val(meta), file("${prefix2}_manta.vcf"),               emit: manta_vcf_normal
-        path "versions.yml",                                                    emit: versions
-        
+        tuple val(group),val(meta), file("${prefix}_manta.vcf"),                              emit: manta_vcf_tumor
+        tuple val(group),val(meta), file("${prefix2}_manta.vcf"), optional: true,              emit: manta_vcf_normal
+        path "versions.yml",                                                                   emit: versions
+
 
     when:
         task.ext.when == null || task.ext.when
-    
+
     script:
         def args    = task.ext.args  ?: ""
         def args2   = task.ext.args2 ?: ""
         tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-        normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
-        normal      = cram[normal_idx]
-        normal_id   = meta.id[normal_idx]
         tumor       = cram[tumor_idx]
         tumor_id    = meta.id[tumor_idx]
         prefix      = task.ext.prefix  ?: tumor_id
-        prefix2     = task.ext.prefix2 ?: normal_id
+        // no normal sample in tumor-only mode: prefix2 is never realized on disk,
+        // the optional manta_vcf_normal output is simply not emitted for these groups
+        prefix2     = task.ext.prefix2 ?: "${tumor_id}.no_normal"
 
-        if(meta.id.size() == 2) { 
+        if(meta.id.size() == 2) {
+            normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            normal      = cram[normal_idx]
+            normal_id   = meta.id[normal_idx]
+            prefix2     = task.ext.prefix2 ?: normal_id
             """
             configManta.py \\
                 --tumorBam $tumor \\
@@ -72,14 +75,15 @@ process MANTA {
 
     stub:
         tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-        normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
-        normal      = cram[normal_idx]
-        normal_id   = meta.id[normal_idx]
         tumor       = cram[tumor_idx]
         tumor_id    = meta.id[tumor_idx]
         prefix      = task.ext.prefix  ?: tumor_id
-        prefix2     = task.ext.prefix2 ?: normal_id
+        prefix2     = task.ext.prefix2 ?: "${tumor_id}.no_normal"
         if(meta.id.size() == 2) {
+            normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            normal      = cram[normal_idx]
+            normal_id   = meta.id[normal_idx]
+            prefix2     = task.ext.prefix2 ?: normal_id
             """
             set +eu
             source activate py2

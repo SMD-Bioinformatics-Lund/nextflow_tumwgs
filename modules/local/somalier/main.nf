@@ -51,37 +51,50 @@ process SOMALIER_QC {
         path "versions.yml", emit: versions
 
     script:
-        def args = task.ext.args ?: "" 
-        def args2 = task.ext.args2 ?: ""  
+        def args = task.ext.args ?: ""
+        def args2 = task.ext.args2 ?: ""
 
         tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-        normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         tumor_bam = crams[tumor_idx]
-        normal_bam = crams[normal_idx]
         tumor_id = meta.id[tumor_idx]
-        normal_id = meta.id[normal_idx]
-        ped_normal = ped_files[normal_idx]
         ped_tumor = ped_files[tumor_idx]
 
-        
-        """
-        somalier extract -d extracted $args ${tumor_bam} 
-        somalier extract -d extracted $args ${normal_bam}
-        cat ${ped_normal} ${ped_tumor}  > ${group_id}.merged.ped
-        somalier relate --ped ${group_id}.merged.ped --infer extracted/*.somalier $args2 -o ${group_id}   
-        somalier contamination -p ./extracted/${tumor_id}.somalier ./extracted/${normal_id}.somalier $args2 -o ${group_id}.contamination.tsv
+        if (meta.id.size() == 2) {
+            normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            normal_bam = crams[normal_idx]
+            normal_id = meta.id[normal_idx]
+            ped_normal = ped_files[normal_idx]
+            """
+            somalier extract -d extracted $args ${tumor_bam}
+            somalier extract -d extracted $args ${normal_bam}
+            cat ${ped_normal} ${ped_tumor}  > ${group_id}.merged.ped
+            somalier relate --ped ${group_id}.merged.ped --infer extracted/*.somalier $args2 -o ${group_id}
+            somalier contamination -p ./extracted/${tumor_id}.somalier ./extracted/${normal_id}.somalier $args2 -o ${group_id}.contamination.tsv
 
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
-        END_VERSIONS
-        """
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
+            END_VERSIONS
+            """
+        } else {
+            // tumor-only: no normal to compare against, so run single-sample
+            // somalier checks (sex/relatedness-independent QC) and skip the
+            // pairwise pairedness/contamination comparison entirely.
+            """
+            somalier extract -d extracted $args ${tumor_bam}
+            somalier relate --ped ${ped_tumor} --infer extracted/*.somalier $args2 -o ${group_id}
+            touch ${group_id}.contamination.tsv
+
+            cat <<-END_VERSIONS > versions.yml
+            "${task.process}":
+                somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
+            END_VERSIONS
+            """
+        }
 
       stub:
         tumor_idx  = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-        normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         tumor_id   = meta.id[tumor_idx]
-        normal_id  = meta.id[normal_idx]
 
         """
         touch ${group_id}.samples.tsv ${group_id}.pairs.tsv ${group_id}.contamination.tsv ${group_id}.groups.tsv

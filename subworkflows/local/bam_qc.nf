@@ -42,24 +42,10 @@ workflow BAM_QC {
         
         ch_PED = CREATE_PED_FILES.out.ped_file 
 
-        ch_PED_grouped = ch_PED
-            .groupTuple(by: 0)
-            .map { group_id, meta_list, ped_list ->
-                def meta_by_type = [:]
-                def ped_by_type = [:]
-        
-                meta_list.eachWithIndex { meta, idx ->
-                meta_by_type[meta.type] = meta
-                ped_by_type[meta.type] = ped_list[idx]
-            }
-        
-            // Order N then T
-            def ordered_types = ['N', 'T']
-            def ordered_meta = ordered_types.collect { meta_by_type[it] }
-            def ordered_peds = ordered_types.collect { ped_by_type[it] }
-        
-            [group_id, ordered_meta, ordered_peds]
-        }
+        // meta_list/ped_list naturally have one entry per sample in the group
+        // (tumor-only groups collapse to size 1); SOMALIER_QC looks up tumor/normal
+        // by type via findIndexOf, so no fixed N/T ordering is required here.
+        ch_PED_grouped = ch_PED.groupTuple(by: 0)
         ch_BAM_PED_grouped = bam_dedup.groupTuple().join(ch_PED_grouped, by: 0)
 
         ch_somalier = ch_BAM_PED_grouped.map { group_id, bam_meta, crams, crais, bais, ped_meta, peds ->

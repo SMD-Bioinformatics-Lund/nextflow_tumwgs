@@ -25,10 +25,14 @@ workflow CNV_CALLING {
         GATKCOV_COUNT ( cram_dedup )
         ch_versions = ch_versions.mix(GATKCOV_COUNT.out.versions)
 
-        GATKCOV_CALL { GATKCOV_BAF.out.gatk_baf.join(GATKCOV_COUNT.out.gatk_count,by:[0,1]).groupTuple() }
+        ch_gatkcov_grouped = GATKCOV_BAF.out.gatk_baf.join(GATKCOV_COUNT.out.gatk_count,by:[0,1]).groupTuple()
+
+        GATKCOV_CALL { ch_gatkcov_grouped }
         ch_versions = ch_versions.mix(GATKCOV_CALL.out.versions)
 
-        GATKCOV_CALL_GERMLINE { GATKCOV_BAF.out.gatk_baf.join(GATKCOV_COUNT.out.gatk_count,by:[0,1]).groupTuple() }
+        // GATKCOV_CALL_GERMLINE calls segments on the normal sample; skip groups
+        // that have no normal (tumor-only) since there is nothing to call.
+        GATKCOV_CALL_GERMLINE { ch_gatkcov_grouped.filter { group, meta, allele, stdCR, denoised -> meta.size() == 2 } }
         ch_versions = ch_versions.mix(GATKCOV_CALL.out.versions)
 
         OVERLAP_GENES { GATKCOV_CALL.out.gatkcov_called }

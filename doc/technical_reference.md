@@ -178,7 +178,23 @@ After `CHECK_INPUT`, two channels are created:
 - `fastq_ch`: `[group, meta, fastq_R1, fastq_R2]`
 - `meta_ch`: `[group, meta]`
 
-The `meta` map carries all CSV fields plus derived fields (e.g., `meta.sex`, `meta.sub`).
+The `meta` map carries all CSV fields plus derived fields (e.g., `meta.sex`, `meta.sub`, `meta.tumor_only`).
+
+### 3.3 Tumor-only Mode
+
+A `group` may contain either two rows (tumor + matched normal, `type` = `T`/`N`) or a single tumor row. `check_samplesheet.py` validates this at input time — any group with 0, 1-normal-only, 2-tumors, or 3+ rows is rejected before the pipeline runs. `create_meta.nf` derives `meta.tumor_only` (`true` when the group has a single row) and stamps it on every sample's meta map, so downstream logic can branch on an explicit flag rather than re-deriving pairing from list sizes.
+
+Sample count per group (1 vs 2) is still the mechanism most processes branch on internally (`meta.id.size()`), since `meta` becomes a list once grouped by `group`. Tumor-only support differs by stage:
+
+| Stage | Tumor-only behavior |
+|-------|----------------------|
+| SNV calling (Freebayes, VarDict, TNscope, DeepSomatic, Pindel) | Each caller runs a native single-sample mode (DeepSomatic uses its dedicated `WGS_TUMOR_ONLY` model). No matched-normal comparison. |
+| DNAscope | Unaffected — always germline, per-sample regardless of pairing. |
+| PON_FILTER | Unaffected — already only references the tumor sample. |
+| Germline/somatic filtering | No matched-normal genotype subtraction is available. Somatic specificity relies entirely on the Panel of Normals (`PON_freebayes`/`PON_vardict`) plus population allele frequency filtering (`POST_ANNOTATION_FILTERS`, gnomAD `MAX_AF` vs `params.filter_freq`). Expect a higher germline/artifact carry-through than paired calling. |
+| GATK CNV | `GATKCOV_CALL_GERMLINE` (segment calling on the normal) is skipped for tumor-only groups — there is no normal to call. `GATKCOV_CALL`'s `--normal-allelic-counts` refinement is likewise omitted. Sex-specific PON (`GATK_PON_FEMALE`/`GATK_PON_MALE`) substitutes for the normal at the read-count level regardless of pairing. |
+| Manta | Runs `configManta.py --tumorBam` only (no `--normalBam`); emits `tumorSV.vcf.gz` as the sole output. The `manta_vcf_normal` channel is declared `optional: true` and is simply absent for these groups. |
+| QC (`SOMALIER_QC`) | Runs single-sample somalier extraction/relate; the pairwise contamination/pairedness comparison is skipped since there's no normal to compare against. `VERIFYBAMID2` (population-based contamination) and the ID-SNP checks (`SNP_CHECK`, `PAIRGEN_CDM`) already run per-sample and report `is_paired_sample: false`. |
 
 ---
 
@@ -363,7 +379,7 @@ Alignment quality metrics and sample identity verification.
 | `SNP_CHECK` | Custom | Tumor/normal identity comparison |
 | `PAIRGEN_CDM` | Custom | Pairwise comparison export |
 
-The ID-SNP check genotypes samples at ~50 pre-defined SNP positions to confirm that the tumour and normal are from the same individual.
+The ID-SNP check genotypes samples at ~50 pre-defined SNP positions to confirm that the tumour and normal are from the same individual. For tumor-only groups, `SOMALIER_QC` skips the pairwise comparison entirely — see [§3.3 Tumor-only Mode](#33-tumor-only-mode).
 
 ---
 
@@ -482,7 +498,7 @@ params.GATK_PON_FEMALE = "/path/to/female_pon.hdf5"
 params.GATK_PON_MALE   = "/path/to/male_pon.hdf5"
 ```
 
-Sex is inferred from `meta.sex` (set in input CSV or derived from alignment data).
+Sex is inferred from `meta.sex` (set in input CSV or derived from alignment data). `GATKCOV_CALL_GERMLINE` is skipped for tumor-only groups (no normal to call germline segments from) — see [§3.3 Tumor-only Mode](#33-tumor-only-mode).
 
 **Outputs:**
 - `tum_plot` — CNV segmentation plot
@@ -517,6 +533,8 @@ bam (tumour+normal) ──► MANTA ──► MANTA_SV ──► SNPEFF ──�
 
 **Outputs:**
 - `fusions` — Final fusion and SV calls (VCF + TSV)
+
+For tumor-only groups, `MANTA` runs in `--tumorBam`-only mode and emits `tumorSV.vcf.gz`; the `manta_vcf_normal` output is `optional: true` and absent — see [§3.3 Tumor-only Mode](#33-tumor-only-mode).
 
 ---
 

@@ -11,8 +11,12 @@ workflow CHECK_INPUT {
 		CSV_CHECK ( csv )
 		checkedCsv = CSV_CHECK.out.csv.splitCsv( header:true, sep:',').set { csvmap }
 
+		group_size = csvmap.map { [it.group, it] }.groupTuple().map { group, rows -> [group, rows.size()] }
+
 		fastq     = csvmap.map { create_fastq_channel(it) }
-		meta      = csvmap.map { create_samples_channel(it) }
+		meta      = csvmap.map { [it.group, it] }
+						.combine(group_size, by: 0)
+						.map { group, row, size -> create_samples_channel(row, size) }
 
 	emit:
 		fastq        // channel: [ val(meta), [ reads ] ]
@@ -56,13 +60,14 @@ def create_fastq_channel(LinkedHashMap row) {
 }
 
 // Function to get a list of metadata (e.g. pedigree, case id) from the sample; [ meta ]
-def create_samples_channel(LinkedHashMap row) {
+def create_samples_channel(LinkedHashMap row, int group_size) {
 	def meta                = [:]
 	meta.id                 = row.id
 	meta.group				= row.group
 	meta.diagnosis          = row.diagnosis
 	meta.sex				= row.sex
 	meta.type               = row.type
+	meta.tumor_only         = (group_size == 1)
 	meta.clarity_sample_id  = row.clarity_sample_id
 	meta.ffpe               = (row.containsKey("ffpe") ? row.ffpe : false)
 	meta.purity             = (row.containsKey("purity") ? row.purity : false)
