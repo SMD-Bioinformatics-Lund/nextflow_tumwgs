@@ -51,7 +51,7 @@ process PELOPS_DUX4 {
     tag "${meta.id}"
 
     input:
-		tuple val(group), val(meta), file(cram), file(crai)
+        tuple val(group), val(meta), file(cram), file(crai), file(bai)
 
     output:
     	tuple val(group), val(meta), path("*pelops.json"),  emit: pelops_dux4_json
