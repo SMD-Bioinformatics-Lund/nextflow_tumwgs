@@ -93,7 +93,7 @@ process GATKCOV_COUNT {
             log.info '[GATK] Available memory not known - defaulting to 50GB. Specify process memory requirements to change this.'
         } else {
             avail_mem = (task.memory.mega * 0.8).intValue()
-        } avail_mem = (task.memory.mega*0.8).intValue()
+        } 
         
         """
         export THEANO_FLAGS="base_compiledir=."
