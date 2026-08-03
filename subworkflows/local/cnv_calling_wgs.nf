@@ -32,7 +32,7 @@ workflow CNV_CALLING {
 
         // GATKCOV_CALL_GERMLINE calls segments on the normal sample; skip groups
         // that have no normal (tumor-only) since there is nothing to call.
-        GATKCOV_CALL_GERMLINE { ch_gatkcov_grouped.filter { group, meta, allele, stdCR, denoised -> meta.size() == 2 } }
+        GATKCOV_CALL_GERMLINE { ch_gatkcov_grouped.filter { grp, sample_meta, allele, stdCR, denoised -> sample_meta.size() == 2 } }
         ch_versions = ch_versions.mix(GATKCOV_CALL.out.versions)
 
         OVERLAP_GENES { GATKCOV_CALL.out.gatkcov_called }
