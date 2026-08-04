@@ -37,9 +37,9 @@ process TNSCOPE {
 
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			END_VERSIONS
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
             """
         }
         else if( meta.id.size() == 1 ) {
@@ -57,9 +57,9 @@ process TNSCOPE {
             #filter_tnscope_unpaired.pl tnscope_${bed}.vcf.raw > tnscope_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			END_VERSIONS
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
             """ 
         }
 
@@ -75,9 +75,9 @@ process TNSCOPE {
             touch ${out_vcf}
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			END_VERSIONS
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
             """
         }
         else {
@@ -125,9 +125,9 @@ process TNSCOPE_ML {
             sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz       
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			END_VERSIONS
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
             """
         }
         else {
@@ -145,9 +145,9 @@ process TNSCOPE_ML {
             sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			END_VERSIONS
+            "${task.process}":
+                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            END_VERSIONS
             """
         }
 
@@ -161,9 +161,9 @@ process TNSCOPE_ML {
         touch ${out_vcf}
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 
 }
@@ -197,9 +197,9 @@ process TNSCOPE_FILTER {
         bcftools index -t ${prefix}_tnscope.vcf.gz
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
         """
     stub:
         def prefix  = task.ext.prefix ?: "${group}"
@@ -214,9 +214,9 @@ process TNSCOPE_FILTER {
         touch ${prefix}_tnscope.vcf.gz.tbi
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
         """
 }
 
@@ -251,10 +251,10 @@ process BWA_ALIGN_SHARD {
         sentieon bwa mem -t ${task.cpus} ${args} '<sentieon fqidx extract ${args2} ${r1} ${r2}' | sentieon util sort $args3 -o ${out_bam} -t ${task.cpus} --sam2bam -i -
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+        END_VERSIONS
         """
     
     stub:
@@ -270,10 +270,10 @@ process BWA_ALIGN_SHARD {
         touch ${out_bam} ${out_bam}.bai
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+        END_VERSIONS
         """
 }
 
@@ -304,10 +304,10 @@ process BWA_MERGE_SHARDS {
         sentieon util merge -o ${prefix}.bwa.sort.bam ${shard_bams}
         
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+        END_VERSIONS
         """
 
     stub:
@@ -317,10 +317,10 @@ process BWA_MERGE_SHARDS {
         touch ${prefix}.bwa.sort.bam ${prefix}.bwa.sort.bam.bai
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+        END_VERSIONS
         """
 }
 
@@ -346,10 +346,10 @@ process BAM_CRAM{
         sentieon driver -t ${task.cpus} -i ${mergedbam} ${args} ${prefix}.sort.cram
         
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+        END_VERSIONS
         """
     stub:
         prefix = task.ext.prefix ?: "${meta.id}.${meta.type}"
@@ -360,10 +360,10 @@ process BAM_CRAM{
         touch ${prefix}.sort.cram.bai
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-			bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+            bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+        END_VERSIONS
         """
 
 }
@@ -405,9 +405,9 @@ process MARKDUP {
         sentieon driver $args3 -t ${task.cpus} -i $cram --algo Dedup $args2 --metrics ${prefix}dedup_metrics.txt $out_cram
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 
     stub:
@@ -426,9 +426,9 @@ process MARKDUP {
         touch ${out_cram}  ${out_cram}.crai ${out_cram}.bai ${prefix}dedup_metrics.txt
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 }
 
@@ -461,9 +461,9 @@ process REALIGN_INDEL_BQSR {
         sentieon driver $args -t ${task.cpus} -i $out_cram --algo QualCal $args3 ${prefix}.bqsr.table
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 
     stub:
@@ -473,9 +473,9 @@ process REALIGN_INDEL_BQSR {
         touch ${out_cram}.bqsr.table
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 }
 
@@ -516,9 +516,9 @@ process SENTIEON_QC {
         cp is_metrics.txt ${prefix}_is_metrics.txt
         
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 
     stub:
@@ -535,9 +535,9 @@ process SENTIEON_QC {
         touch ${prefix}_is_metrics.txt
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 }
 
@@ -561,9 +561,9 @@ process COLLECT_QC {
         qc_sentieon.pl ${meta.id}_${meta.type} wgs > ${prefix}_${meta.type}.aln.QC
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
     
     stub:
@@ -572,9 +572,9 @@ process COLLECT_QC {
         touch ${meta.id}_${meta.type}.aln.QC
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 
 }
@@ -601,9 +601,9 @@ process CRAM_TO_BAM {
         samtools index -@ ${task.cpus} ${out_bam}
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
         """
     
     stub:
@@ -613,9 +613,9 @@ process CRAM_TO_BAM {
         touch ${out_bam} ${out_bam}.bai
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
         """
 
 }
@@ -647,9 +647,9 @@ process DNASCOPE {
         sentieon driver -t ${task.cpus} $args -i $cram $args2 --algo DNAscope $args3 $out_vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 
     stub:
@@ -658,9 +658,9 @@ process DNASCOPE {
         touch ${out_vcf} ${out_vcf}.tbi
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-		END_VERSIONS
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
         """
 }
 

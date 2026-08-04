@@ -75,9 +75,9 @@ process PINDEL_CALLING {
         filter_pindel_somatic.pl ${prefix}_pindel_unfilt.vcf ${prefix}_pindel.vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			pindel: \$(echo \$(pindel --version 2>&1)  | grep 'Pindel version' | sed 's/.*Pindel version //' | sed 's/, .*//g')
-		END_VERSIONS
+        "${task.process}":
+            pindel: \$(echo \$(pindel --version 2>&1)  | grep 'Pindel version' | sed 's/.*Pindel version //' | sed 's/, .*//g')
+        END_VERSIONS
         """
 
     stub:
@@ -86,8 +86,8 @@ process PINDEL_CALLING {
         touch ${prefix}_pindel.vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			pindel: \$(echo \$(pindel --version 2>&1)  | grep 'Pindel version' | sed 's/.*Pindel version //' | sed 's/, .*//g')
-		END_VERSIONS
+        "${task.process}":
+            pindel: \$(echo \$(pindel --version 2>&1)  | grep 'Pindel version' | sed 's/.*Pindel version //' | sed 's/, .*//g')
+        END_VERSIONS
         """
 }

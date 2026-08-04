@@ -50,9 +50,9 @@ process LOWCOV {
         overlapping_genes.pl lowcov.bed $args2 > ${prefix}.lowcov.bed
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sambamba: \$(echo \$(sambamba --version 2>&1) | sed 's/sambamba //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            sambamba: \$(echo \$(sambamba --version 2>&1) | sed 's/sambamba //; s/ .*//')
+        END_VERSIONS
         """
 
     stub:
@@ -62,9 +62,9 @@ process LOWCOV {
         touch ${prefix}.lowcov.bed
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			sambamba: \$(echo \$(sambamba --version 2>&1) | sed 's/sambamba //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            sambamba: \$(echo \$(sambamba --version 2>&1) | sed 's/sambamba //; s/ .*//')
+        END_VERSIONS
         """
 }
 
@@ -150,9 +150,9 @@ process CONTAMINATION {
             paste -d " " ${meta.id[normal_idx]}.1 ${meta.id[normal_idx]}.value > ${meta.id[normal_idx]}.contaminationpy
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
         else {
@@ -162,9 +162,9 @@ process CONTAMINATION {
             paste -d " " ${meta.id[0]}.1 ${meta.id[0]}.value > ${meta.id[0]}.contaminationpy
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
 
@@ -179,9 +179,9 @@ process CONTAMINATION {
             touch ${meta.id[normal_idx]}.contaminationpy
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
         else {
@@ -191,9 +191,9 @@ process CONTAMINATION {
             touch ${meta.id[0]}.contaminationpy
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
 }
@@ -220,11 +220,11 @@ process LOWCOV_D4 {
         coyote_d4_cov.py -b $bam $args -o ${prefix}.cov.json -s ${prefix}
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			python: \$(python --version 2>&1| sed -e 's/Python //g')
-			d4tools: \$(echo \$( d4tools 2>&1 | head -1 ) | sed "s/.*version: //" | sed "s/)//" )
-			bedtools: \$(bedtools | grep Version | sed -r "s/Version:\s+//")
-		END_VERSIONS
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+            d4tools: \$(echo \$( d4tools 2>&1 | head -1 ) | sed "s/.*version: //" | sed "s/)//" )
+            bedtools: \$(bedtools | grep Version | sed -r "s/Version:\s+//")
+        END_VERSIONS
         """
 
     stub:
@@ -233,11 +233,11 @@ process LOWCOV_D4 {
         touch ${prefix}.cov.json
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			python: \$(python --version 2>&1| sed -e 's/Python //g')
-			d4tools: \$(echo \$( d4tools 2>&1 | head -1 ) | sed "s/.*version: //" | sed "s/)//" )
-			bedtools: \$(bedtools | grep Version | sed -r "s/Version:\s+//")
-		END_VERSIONS
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+            d4tools: \$(echo \$( d4tools 2>&1 | head -1 ) | sed "s/.*version: //" | sed "s/)//" )
+            bedtools: \$(bedtools | grep Version | sed -r "s/Version:\s+//")
+        END_VERSIONS
         """
 }
 
@@ -262,9 +262,9 @@ process MERGE_QC_JSON {
         merge_json_files.py $args $alg_qc_json $contamination_json > ${prefix}_${meta.type}.QC
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			python: \$(python --version 2>&1| sed -e 's/Python //g')
-		END_VERSIONS
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+        END_VERSIONS
         """
 
     stub:
@@ -275,8 +275,8 @@ process MERGE_QC_JSON {
         echo    "merge_json_files.py $args $alg_qc_json $contamination_json > ${prefix}_${meta.type}.QC"
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			python: \$(python --version 2>&1| sed -e 's/Python //g')
-		END_VERSIONS
+        "${task.process}":
+            python: \$(python --version 2>&1| sed -e 's/Python //g')
+        END_VERSIONS
         """
 }

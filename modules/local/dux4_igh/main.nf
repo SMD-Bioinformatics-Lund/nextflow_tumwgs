@@ -28,9 +28,9 @@ process REHEADER_CRAM {
         samtools index -@ ${task.cpus} ${out_cram_header}
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
         """
 	
     stub:
@@ -40,9 +40,9 @@ process REHEADER_CRAM {
         touch ${out_cram_header} ${out_cram_header}.crai
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
         """
 }
 
@@ -70,9 +70,9 @@ process PELOPS_DUX4 {
             ${args}
         
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			pelops: \$(echo \$(pelops version 2>&1))
-		END_VERSIONS
+        "${task.process}":
+            pelops: \$(echo \$(pelops version 2>&1))
+        END_VERSIONS
         """
 
 	stub:
@@ -82,9 +82,9 @@ process PELOPS_DUX4 {
         touch ${prefix}.pelops.json
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			pelops: \$(echo \$(pelops version 2>&1))
-		END_VERSIONS
+        "${task.process}":
+            pelops: \$(echo \$(pelops version 2>&1))
+        END_VERSIONS
         """
 }
 
@@ -117,9 +117,9 @@ process JSON_PELOPS_TO_VCF {
             pelops_json_to_vcf.py --tumor-json ${jsons[tumor_idx]} --normal-json ${jsons[normal_idx]} --tumor-name ${id_tumor} --normal-name ${id_normal} --output ${prefix}.pelops.vcf
             
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				python: \$(python --version 2>&1| sed -e 's/Python //g')
-			END_VERSIONS
+            "${task.process}":
+                python: \$(python --version 2>&1| sed -e 's/Python //g')
+            END_VERSIONS
             """
         }
         else if (meta.id.size() == 1) {
@@ -131,9 +131,9 @@ process JSON_PELOPS_TO_VCF {
                 --output ${prefix}.pelops.vcf
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				python: \$(python --version 2>&1| sed -e 's/Python //g')
-			END_VERSIONS
+            "${task.process}":
+                python: \$(python --version 2>&1| sed -e 's/Python //g')
+            END_VERSIONS
             """
         }
 
@@ -155,18 +155,18 @@ process JSON_PELOPS_TO_VCF {
 
             touch ${prefix}.pelops.vcf
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":    
-				python: \$(python --version 2>&1| sed -e 's/Python //g')
-			END_VERSIONS
+            "${task.process}":    
+                python: \$(python --version 2>&1| sed -e 's/Python //g')
+            END_VERSIONS
             """
         }
         else if (meta.id.size() == 1) {
             """
             touch ${prefix}.pelops.vcf
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":    
-				python: \$(python --version 2>&1| sed -e 's/Python //g')
-			END_VERSIONS
+            "${task.process}":    
+                python: \$(python --version 2>&1| sed -e 's/Python //g')
+            END_VERSIONS
             """
         }
 }

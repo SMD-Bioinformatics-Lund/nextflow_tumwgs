@@ -21,9 +21,9 @@ process SEQTK {
         seqtk sample $args $r2 ${meta.sub} | gzip --no-name > ${prefix}_R2_subsample_${meta.sub}.fastq.gz
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			seqtk: \$(echo \$(seqtk 2>&1) | sed 's/.*Version: //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            seqtk: \$(echo \$(seqtk 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
         """
 
     stub:
@@ -33,8 +33,8 @@ process SEQTK {
         touch ${prefix}_R2_subsample_${meta.sub}.fastq.gz
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			seqtk: \$(echo \$(seqtk 2>&1) | sed 's/.*Version: //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            seqtk: \$(echo \$(seqtk 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
         """
 }

@@ -24,9 +24,9 @@ process ALLELE_CALL {
         genotype2json.py ${prefix}.genotypes ${prefix}.genotypes.json
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
         """
 
     stub:
@@ -36,9 +36,9 @@ process ALLELE_CALL {
         touch ${prefix}.genotypes.json
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
         """
 }
 
@@ -94,9 +94,9 @@ process SNP_CHECK {
             combinejsons.py  ${normal_id}.json ${norGTjson} --partner_run_json_file ${normal_id}_partner_info.json ${normal_id}.idsnp
         
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         } else {
             """
@@ -105,9 +105,9 @@ process SNP_CHECK {
             combinejsons.py  ${tumor_id}.json ${tumGTjson} ${tumor_id}.idsnp
             
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
 
@@ -125,9 +125,9 @@ process SNP_CHECK {
 
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         } else {
         
@@ -137,9 +137,9 @@ process SNP_CHECK {
             touch ${tumor_id}.idsnp
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
 }
@@ -235,9 +235,9 @@ process PROVIDER {
         provider.pl  --bam $bam  $args  --out $prefix 
     
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-		END_VERSIONS
+        "${task.process}":
+            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+        END_VERSIONS
         """
         
     stub:
@@ -247,8 +247,8 @@ process PROVIDER {
         touch ${prefix}.genotypes
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-		END_VERSIONS
+        "${task.process}":
+            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+        END_VERSIONS
         """
 }

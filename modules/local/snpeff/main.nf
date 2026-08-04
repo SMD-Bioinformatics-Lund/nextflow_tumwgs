@@ -25,9 +25,9 @@ process SNPEFF {
         snpEff -Xmx${avail_mem}M $args ${vcf} > ${prefix}.merged.annotated.vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
-		END_VERSIONS
+        "${task.process}":
+            snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
+        END_VERSIONS
         """
 
     stub:
@@ -36,9 +36,9 @@ process SNPEFF {
         touch ${prefix}.merged.annotated.vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
-		END_VERSIONS
+        "${task.process}":
+            snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
+        END_VERSIONS
         """ 
 }
 
@@ -73,9 +73,9 @@ process SNPEFF_SV_ANN {
         grep -v 'MantaBND:' ${prefix}.SV.annotated.vcf | grep -v 'MantaINV:'  >  ${prefix}.TANDEM.INS.DEL.SV_annotated.vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
-		END_VERSIONS
+        "${task.process}":
+            snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
+        END_VERSIONS
         """
 
     stub:
@@ -87,9 +87,9 @@ process SNPEFF_SV_ANN {
 
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
-		END_VERSIONS
+        "${task.process}":
+            snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
+        END_VERSIONS
         """ 
 }
 
@@ -134,9 +134,9 @@ process SNPEFF_SV_FINAL {
 
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
-		END_VERSIONS
+        "${task.process}":
+            snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
+        END_VERSIONS
         """
 
     stub:
@@ -148,9 +148,9 @@ process SNPEFF_SV_FINAL {
         touch ${prefix}.TANDEM.SV_annotated.vcf
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
-		END_VERSIONS
+        "${task.process}":
+            snpEff: \$(echo \$(snpEff -version 2>&1) | grep 'SnpEff ' | sed 's/.*SnpEff //; s/ .*\$//')
+        END_VERSIONS
         """         
 }
 
@@ -190,9 +190,9 @@ process COMBINE_FUSIONS {
         bcftools sort fixed.vcf -o ${prefix}.final.fusions.vcf	
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS 
         """
 
     stub:
@@ -204,8 +204,8 @@ process COMBINE_FUSIONS {
         touch ${prefix}.final.fusions.vcf	
 
         cat <<-END_VERSIONS > versions.yml
-		"${task.process}":
-			bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
-		END_VERSIONS
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
         """
 }

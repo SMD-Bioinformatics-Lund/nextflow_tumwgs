@@ -34,10 +34,10 @@ process VARDICT {
             filter_vardict_somatic_wgs.pl vardict_${bed}.vcf.raw ${meta.id[tumor_idx]} ${meta.id[normal_idx]} | grep -v 'FAIL_' > vardict_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
         else if( meta.id.size() == 1 ) {
@@ -54,10 +54,10 @@ process VARDICT {
             filter_vardict_unpaired.pl vardict_${bed}.vcf.raw > vardict_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
 
@@ -70,10 +70,10 @@ process VARDICT {
             touch vardict_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
         else {
@@ -82,10 +82,10 @@ process VARDICT {
             touch vardict_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-			"${task.process}":
-				vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
-				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-			END_VERSIONS
+            "${task.process}":
+                vardict: \$( realpath \$( command -v vardict-java ) | sed 's/.*java-//;s/-.*//' )
+                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            END_VERSIONS
             """
         }
 }
