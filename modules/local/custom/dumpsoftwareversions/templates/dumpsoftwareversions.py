@@ -58,10 +58,11 @@ def main():
         "yaml": yaml.__version__,
     }
 
+    versions_by_process = dict(versions_this_module)
     with open("$versions") as f:
-        versions_by_process = (
-            yaml.load(f, Loader=yaml.BaseLoader) | versions_this_module
-        )
+        for doc in yaml.load_all(f, Loader=yaml.BaseLoader):
+            if doc:
+                versions_by_process.update(doc)
 
     # aggregate versions by the module name (derived from fully-qualified process name)
     versions_by_module = {}

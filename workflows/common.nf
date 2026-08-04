@@ -122,7 +122,7 @@ workflow SWGP_COMMON {
     
     
     CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml'),
+        ch_versions.unique().collectFile(name: 'collated_versions.yml', newLine: true) { "---\n" + it.text },
         CHECK_INPUT.out.meta
     )
 }
