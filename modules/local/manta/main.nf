@@ -46,10 +46,10 @@ process MANTA {
 
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    manta: \$(configManta.py --version)
-    python: \$(python --version 2>&1 | sed -e 's/Python //g')
-END_VERSIONS
+			"${task.process}":
+				manta: \$(configManta.py --version)
+				python: \$(python --version 2>&1 | sed -e 's/Python //g')
+			END_VERSIONS
             """
         }
         else {
@@ -66,10 +66,10 @@ END_VERSIONS
             gunzip ${prefix}_manta.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    manta: \$(configManta.py --version)
-    python: \$(python --version 2>&1 | sed -e 's/Python //g')
-END_VERSIONS
+			"${task.process}":
+				manta: \$(configManta.py --version)
+				python: \$(python --version 2>&1 | sed -e 's/Python //g')
+			END_VERSIONS
             """
         }
 
@@ -92,10 +92,10 @@ END_VERSIONS
             touch ${prefix2}_manta.vcf
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    manta: \$(configManta.py --version)
-    python: \$(python --version 2>&1 | sed -e 's/Python //g')
-END_VERSIONS
+			"${task.process}":
+				manta: \$(configManta.py --version)
+				python: \$(python --version 2>&1 | sed -e 's/Python //g')
+			END_VERSIONS
             """
         }
         else {
@@ -106,10 +106,10 @@ END_VERSIONS
             touch ${prefix}_manta.vcf 
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    manta: \$(configManta.py --version)
-    python: \$(python --version 2>&1 | sed -e 's/Python //g')
-END_VERSIONS
+			"${task.process}":
+				manta: \$(configManta.py --version)
+				python: \$(python --version 2>&1 | sed -e 's/Python //g')
+			END_VERSIONS
             """
         }
 
@@ -139,10 +139,10 @@ process MANTA_SV {
         grep -e \$'\\tPASS\\t' -e '^#' ${vcf} |grep -Ev 'GL000|hs37d5' > ${prefix}.manta.SV.pass.vcf
     
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    manta: \$(configManta.py --version)
-    python: \$(python --version 2>&1 | sed -e 's/Python //g')
-END_VERSIONS
+		"${task.process}":
+			manta: \$(configManta.py --version)
+			python: \$(python --version 2>&1 | sed -e 's/Python //g')
+		END_VERSIONS
         """
     stub:
         def args        = task.ext.args ?: ''
@@ -152,10 +152,10 @@ END_VERSIONS
         echo ${args}
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    manta: \$(configManta.py --version)
-    python: \$(python --version 2>&1 | sed -e 's/Python //g')
-END_VERSIONS
+		"${task.process}":
+			manta: \$(configManta.py --version)
+			python: \$(python --version 2>&1 | sed -e 's/Python //g')
+		END_VERSIONS
         """
 }
 

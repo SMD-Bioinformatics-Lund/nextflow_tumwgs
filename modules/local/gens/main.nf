@@ -30,9 +30,9 @@ process GENS_VIZ {
         echo "gens load sample --sample-id ${meta.id} --case-id ${process_group} --genome-build 38 --baf ${params.gens_accessdir}/${meta.id}.baf.bed.gz --coverage ${params.gens_accessdir}/${meta.id}.cov.bed.gz" > ${meta.id}.gens
         
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+		"${task.process}":
+			perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+		END_VERSIONS
 		"""
 
     stub:
@@ -51,9 +51,9 @@ END_VERSIONS
         touch ${meta.id}.gens
         
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+		"${task.process}":
+			perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+		END_VERSIONS
         """
 }
 

@@ -40,9 +40,9 @@ process DEEPSOMATIC {
                 --intermediate_results_dir=${interm_dir}
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    DeepSomatic: \$(run_deepsomatic --version 2>/dev/null |sed -e "s/DeepSomatic: //g")
-END_VERSIONS
+			"${task.process}":
+				DeepSomatic: \$(run_deepsomatic --version 2>/dev/null |sed -e "s/DeepSomatic: //g")
+			END_VERSIONS
             """
         }
         else if (meta.id.size() == 1) {
@@ -63,9 +63,9 @@ END_VERSIONS
                 --use_default_pon_filtering=true
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    DeepSomatic: \$(run_deepsomatic --version 2>&1 | sed -e "s/: DeepVariant version //g")
-END_VERSIONS
+			"${task.process}":
+				DeepSomatic: \$(run_deepsomatic --version 2>&1 | sed -e "s/: DeepVariant version //g")
+			END_VERSIONS
             """
         }
 
@@ -86,9 +86,9 @@ END_VERSIONS
             echo "${meta.id[tumor_idx]}_deepsomatic_output.vcf.gz" > ${meta.id[tumor_idx]}_deepsomatic_output.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    DeepSomatic: \$(run_deepsomatic --version 2>/dev/null |sed -e "s/DeepSomatic: //g")
-END_VERSIONS
+			"${task.process}":
+				DeepSomatic: \$(run_deepsomatic --version 2>/dev/null |sed -e "s/DeepSomatic: //g")
+			END_VERSIONS
 			"""
         }
         else {
@@ -101,9 +101,9 @@ END_VERSIONS
             echo "${meta.id[0]}_deepsomatic_output.vcf.gz" > ${meta.id[0]}_deepsomatic_output.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    DeepSomatic: stub
-END_VERSIONS
+			"${task.process}":
+				DeepSomatic: stub
+			END_VERSIONS
 			"""
         }
 }

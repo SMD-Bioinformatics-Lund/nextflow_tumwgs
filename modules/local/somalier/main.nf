@@ -19,9 +19,9 @@ process CREATE_PED_FILES {
         mv ${meta.group}_base.ped ${meta.group}_${meta.id}_base.ped
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+		"${task.process}":
+			perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+		END_VERSIONS
         """
     stub:
         def father = meta.father ?: "0"
@@ -32,9 +32,9 @@ END_VERSIONS
         touch ${meta.group}_${meta.id}_base.ped
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+		"${task.process}":
+			perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+		END_VERSIONS
         """
 }
 
@@ -72,9 +72,9 @@ process SOMALIER_QC {
             somalier contamination -p ./extracted/${tumor_id}.somalier ./extracted/${normal_id}.somalier $args2 -o ${group_id}.contamination.tsv
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
-END_VERSIONS
+			"${task.process}":
+				somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
+			END_VERSIONS
             """
         } else {
             // tumor-only: no normal to compare against, so run single-sample
@@ -86,9 +86,9 @@ END_VERSIONS
             touch ${group_id}.contamination.tsv
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
-END_VERSIONS
+			"${task.process}":
+				somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
+			END_VERSIONS
             """
         }
 
@@ -100,9 +100,9 @@ END_VERSIONS
         touch ${group_id}.samples.tsv ${group_id}.pairs.tsv ${group_id}.contamination.tsv ${group_id}.groups.tsv
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
-END_VERSIONS
+		"${task.process}":
+			somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
+		END_VERSIONS
         """
 }
 
@@ -144,9 +144,9 @@ process SOMALIER2CDM {
         $args $args2
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    python: \$(python --version 2>&1| sed -e 's/Python //g')
-END_VERSIONS
+		"${task.process}":
+			python: \$(python --version 2>&1| sed -e 's/Python //g')
+		END_VERSIONS
         """
 
     stub:
@@ -174,9 +174,9 @@ END_VERSIONS
         $touch_cmds
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    python: \$(python --version 2>&1| sed -e 's/Python //g')
-END_VERSIONS
+		"${task.process}":
+			python: \$(python --version 2>&1| sed -e 's/Python //g')
+		END_VERSIONS
         """
 }
 

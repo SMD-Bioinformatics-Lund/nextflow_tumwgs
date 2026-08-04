@@ -35,9 +35,9 @@ process GATKCOV_BAF {
             -O ${prefix}.allelicCounts.tsv
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 
     stub:
@@ -51,9 +51,9 @@ END_VERSIONS
         touch ${prefix}.allelicCounts.tsv
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 }
 
@@ -121,9 +121,9 @@ END_VERSIONS
             --output . --output-prefix ${prefix}
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 
     stub:
@@ -145,9 +145,9 @@ END_VERSIONS
         touch ${prefix}.denoisedCR.tsv
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """    
 } */
 
@@ -220,9 +220,9 @@ process GATKCOV_COUNT {
             --output . --output-prefix ${prefix}
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 
     stub:
@@ -244,9 +244,9 @@ END_VERSIONS
         touch ${prefix}.denoisedCR.tsv
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 }
 
@@ -312,9 +312,9 @@ process GATKCOV_CALL {
             --output-prefix ${prefix}
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 
     stub:
@@ -332,9 +332,9 @@ END_VERSIONS
         touch ${prefix}.modeled.png
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 }
 
@@ -390,9 +390,9 @@ process GATKCOV_CALL_GERMLINE {
             --output-prefix ${prefix}
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 
     stub:
@@ -410,9 +410,9 @@ END_VERSIONS
         touch ${prefix}.modeled.png
 
         cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
-END_VERSIONS
+		"${task.process}":
+			gatk4: \$(echo \$(gatk --version 2>&1) | sed 's/^.*(GATK) v//; s/ .*\$//')
+		END_VERSIONS
         """
 }
 

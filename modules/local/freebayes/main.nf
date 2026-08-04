@@ -37,11 +37,11 @@ process FREEBAYES {
             filter_freebayes_somatic_wgs.pl freebayes_${bed}.vcf.raw ${meta.id[tumor_idx]} ${meta.id[normal_idx]} |grep -v 'FAIL_'  > freebayes_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
-    vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed  's/.* //g' )
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+			"${task.process}":
+				freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
+				vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed  's/.* //g' )
+				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+			END_VERSIONS
             """
         }
         else if( meta.id.size() == 1 ) {
@@ -58,11 +58,11 @@ END_VERSIONS
             filter_freebayes_unpaired.pl freebayes_${bed}.vcf.raw |grep -v 'FAIL_' > freebayes_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
-    vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+			"${task.process}":
+				freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
+				vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
+				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+			END_VERSIONS
             """
         }
 
@@ -76,11 +76,11 @@ END_VERSIONS
             touch freebayes_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
-    vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+			"${task.process}":
+				freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
+				vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
+				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+			END_VERSIONS
             """
         }
         else {
@@ -89,11 +89,11 @@ END_VERSIONS
             touch freebayes_${bed}.vcf
 
             cat <<-END_VERSIONS > versions.yml
-"${task.process}":
-    freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
-    vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
-    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-END_VERSIONS
+			"${task.process}":
+				freebayes: \$(echo \$(freebayes --version 2>&1) | sed 's/version:\s*v//g' )
+				vcffilter: \$(echo \$( vcffilter -h 2>&1) | grep 'vcflib' | sed 's/ filter.*\$//g' | sed 's/.* //g' )
+				perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+			END_VERSIONS
             """
         }
 }
