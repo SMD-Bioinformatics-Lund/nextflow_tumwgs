@@ -142,7 +142,7 @@ process TNSCOPE_ML {
                 --min_tumor_allele_frac ${params.tnscope_var_freq_cutoff_up} \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.tnscope.vcf.gz
+            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -153,24 +153,18 @@ process TNSCOPE_ML {
 
 
     stub:
+    
+        tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
+        out_vcf = "${meta.id[tumor_idx]}.all.tnscope.vcf.gz"
 
-        if (meta.id.size() >= 2 ) {
-            tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-            normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
-            out_vcf = "${meta.id[tumor_idx]}.all.tnscope.vcf.gz"
-        
-            """
-            touch ${out_vcf}
+        """
+        touch ${out_vcf}
 
-            cat <<-END_VERSIONS > versions.yml
-            "${task.process}":
-                sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
-            END_VERSIONS
-            """
-        }
-        else {
-
-        }
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
 
 }
 

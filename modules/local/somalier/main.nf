@@ -124,20 +124,23 @@ process SOMALIER2CDM {
         def args2   = task.ext.args2    ?: ''
 
         def tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-        def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         def tumor_id = meta.id[tumor_idx]
-        def normal_id = meta.id[normal_idx]
         def tumor_run = meta.sequencing_run[tumor_idx]
-        def normal_run = meta.sequencing_run[normal_idx]
-
         def tumor_arg =  "${tumor_id}:${tumor_run}"
-        def normal_arg =  "${normal_id}:${normal_run}"
-            
+
+        def sample_args = "--sample $tumor_arg"
+        if (meta.id.size() == 2) {
+            def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            def normal_id = meta.id[normal_idx]
+            def normal_run = meta.sequencing_run[normal_idx]
+            def normal_arg =  "${normal_id}:${normal_run}"
+            sample_args += " --sample $normal_arg"
+        }
+
         """
         somalier2json.py \
         --somalier $samples_stats \
-        --sample $tumor_arg \
-        --sample $normal_arg \
+        $sample_args \
         $args $args2
 
         cat <<-END_VERSIONS > versions.yml
@@ -145,28 +148,31 @@ process SOMALIER2CDM {
             python: \$(python --version 2>&1| sed -e 's/Python //g')
         END_VERSIONS
         """
-        
+
     stub:
         def args    = task.ext.args     ?: ''
         def args2   = task.ext.args2    ?: ''
 
         def tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
-        def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         def tumor_id = meta.id[tumor_idx]
-        def normal_id = meta.id[normal_idx]
         def tumor_run = meta.sequencing_run[tumor_idx]
-        def normal_run = meta.sequencing_run[normal_idx]
-
         def tumor_arg =  "${tumor_id}:${tumor_run}"
-        def normal_arg =  "${normal_id}:${normal_run}"
+
+        def sample_args = "--sample $tumor_arg"
+        def touch_cmds = "touch \"${tumor_id}.somalier.json\"\ntouch \"${tumor_id}.peddy2cdm\""
+        if (meta.id.size() == 2) {
+            def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
+            def normal_id = meta.id[normal_idx]
+            def normal_run = meta.sequencing_run[normal_idx]
+            def normal_arg =  "${normal_id}:${normal_run}"
+            sample_args += " --sample $normal_arg"
+            touch_cmds += "\ntouch \"${normal_id}.somalier.json\"\ntouch \"${normal_id}.peddy2cdm\""
+        }
 
         """
-        echo "somalier2json.py --somalier $samples_stats --sample $tumor_arg --sample $normal_arg $args $args2"
-        touch "${tumor_id}.somalier.json"
-        touch "${tumor_id}.peddy2cdm"
-        touch "${normal_id}.somalier.json"
-        touch "${normal_id}.peddy2cdm"
-        
+        echo "somalier2json.py --somalier $samples_stats $sample_args $args $args2"
+        $touch_cmds
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             python: \$(python --version 2>&1| sed -e 's/Python //g')
