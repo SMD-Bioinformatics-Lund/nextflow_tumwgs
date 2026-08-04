@@ -14,6 +14,7 @@ include { ADD_TO_DB                     } from '../subworkflows/local/add_to_db'
 include { CUSTOM_DUMPSOFTWAREVERSIONS   } from '../modules/local/custom/dumpsoftwareversions/main'
 
 csv = file(params.csv)
+params.paired = csv.countLines() > 2 ? true : false
 
 Channel
     .from( 0..params.bwa_shards-1)
@@ -35,13 +36,14 @@ workflow SWGP_COMMON {
     ch_versions = Channel.empty()
 
     // Checks input, creates meta-channel and decides whether data should be downsampled //
-    CHECK_INPUT ( Channel.fromPath(csv) )
+    CHECK_INPUT ( Channel.fromPath(csv), params.paired )
 
     // Downsample if meta.sub == value and not false //
     SAMPLE ( CHECK_INPUT.out.fastq )  
     .set{ ch_trim }
     ch_versions = ch_versions.mix(ch_trim.versions)
 
+    CHECK_INPUT.out.meta.view()
     // Do alignment if downsample was false and mix with SAMPLE subworkflow output
     ALIGN_SENTIEON ( 
         ch_bwa_shards,
