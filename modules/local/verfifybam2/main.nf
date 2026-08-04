@@ -28,9 +28,9 @@ process VERIFYBAMID2 {
         echo "{ \\"contamination\\": \\"\$value\\" }" > ${prefix}.contamination.json
 
         cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            verifybamid: \$(echo \$(verifybamid2 -h 2>&1 | grep Version | sed "s/Version://"))
-        END_VERSIONS
+"${task.process}":
+    verifybamid: \$(echo \$(verifybamid2 -h 2>&1 | grep Version | sed "s/Version://"))
+END_VERSIONS
         """
 
     stub:
@@ -40,8 +40,8 @@ process VERIFYBAMID2 {
         touch  ${prefix}.result.Ancestry ${prefix}.result.selfSM
 
         cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            verifybamid: \$(echo \$(verifybamid2 -h 2>&1 | grep Version | sed "s/Version://"))
-        END_VERSIONS
+"${task.process}":
+    verifybamid: \$(echo \$(verifybamid2 -h 2>&1 | grep Version | sed "s/Version://"))
+END_VERSIONS
         """
 }

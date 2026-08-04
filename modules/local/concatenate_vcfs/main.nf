@@ -23,11 +23,11 @@ process CONCATENATE_VCFS {
         vt normalize ${vc}.decomposed.sorted.vcf.gz $args | vt uniq - -o ${prefix}_${vc}.vcf.gz
         
         cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            vcftools: \$(echo \$(vcftools --version 2>&1) | sed 's/^.*VCFtools (//;s/).*//')
-            vt-decompose: \$(echo \$(vt decompose 2>&1) | sed 's/.*decompose v//; s/ .*//')
-            vt-normalize: \$(echo \$(vt normalize 2>&1) | sed 's/.*normalize v//; s/ .*//')
-        END_VERSIONS
+"${task.process}":
+    vcftools: \$(echo \$(vcftools --version 2>&1) | sed 's/^.*VCFtools (//;s/).*//')
+    vt-decompose: \$(echo \$(vt decompose 2>&1) | sed 's/.*decompose v//; s/ .*//')
+    vt-normalize: \$(echo \$(vt normalize 2>&1) | sed 's/.*normalize v//; s/ .*//')
+END_VERSIONS
         """
         
     stub:
@@ -36,11 +36,11 @@ process CONCATENATE_VCFS {
         touch ${prefix}_${vc}.vcf.gz
 
         cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            vcftools: \$(echo \$(vcftools --version 2>&1) | sed 's/^.*VCFtools (//;s/).*//')
-            vt-decompose: \$(echo \$(vt decompose 2>&1) | sed 's/.*decompose v//; s/ .*//')
-            vt-normalize: \$(echo \$(vt normalize 2>&1) | sed 's/.*normalize v//; s/ .*//')
-        END_VERSIONS
+"${task.process}":
+    vcftools: \$(echo \$(vcftools --version 2>&1) | sed 's/^.*VCFtools (//;s/).*//')
+    vt-decompose: \$(echo \$(vt decompose 2>&1) | sed 's/.*decompose v//; s/ .*//')
+    vt-normalize: \$(echo \$(vt normalize 2>&1) | sed 's/.*normalize v//; s/ .*//')
+END_VERSIONS
         """
 }
 
@@ -73,9 +73,9 @@ process AGGREGATE_VCFS {
         aggregate_vcf.pl --vcf ${vcfs.sort(false) { a, b -> a.getBaseName() <=> b.getBaseName() }.join(",")} --sample-order ${sample_order} |vcf-sort -c > ${prefix}.agg.vcf
 
         cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-        END_VERSIONS
+"${task.process}":
+    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+END_VERSIONS
         """
 
     stub:
@@ -90,9 +90,9 @@ process AGGREGATE_VCFS {
             touch ${prefix}.agg.vcf
 
             cat <<-END_VERSIONS > versions.yml
-            "${task.process}":
-                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-            END_VERSIONS
+"${task.process}":
+    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+END_VERSIONS
             """
         }
         else {
@@ -100,9 +100,9 @@ process AGGREGATE_VCFS {
             touch ${group}.agg.vcf
 
             cat <<-END_VERSIONS > versions.yml
-            "${task.process}":
-                perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-            END_VERSIONS
+"${task.process}":
+    perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+END_VERSIONS
             """
         }
 }
