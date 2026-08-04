@@ -88,7 +88,7 @@ process SOMALIER_QC {
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
                 somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
-            END_VERSIONS
+        END_VERSIONS
             """
         }
 
@@ -171,8 +171,7 @@ process SOMALIER2CDM {
 
         """
         echo "somalier2json.py --somalier $samples_stats $sample_args $args $args2"
-        $touch_cmds
-
+       
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             python: \$(python --version 2>&1| sed -e 's/Python //g')
