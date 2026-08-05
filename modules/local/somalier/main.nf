@@ -88,7 +88,7 @@ process SOMALIER_QC {
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
                 somalier: \$(somalier 2>&1 |sed -n 's/.*version: \\([0-9.]*\\).*/\\1/p')
-        END_VERSIONS
+            END_VERSIONS
             """
         }
 
@@ -159,23 +159,24 @@ process SOMALIER2CDM {
         def tumor_arg =  "${tumor_id}:${tumor_run}"
 
         def sample_args = "--sample $tumor_arg"
-        def touch_cmds = "touch \"${tumor_id}.somalier.json\"\ntouch \"${tumor_id}.peddy2cdm\""
+        def tumor_cmds = "\ntouch \"${tumor_id}.somalier.json\"\ntouch \"${tumor_id}.peddy2cdm\"\n"
         if (meta.id.size() == 2) {
             def normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             def normal_id = meta.id[normal_idx]
             def normal_run = meta.sequencing_run[normal_idx]
             def normal_arg =  "${normal_id}:${normal_run}"
             sample_args += " --sample $normal_arg"
-            touch_cmds += "\ntouch \"${normal_id}.somalier.json\"\ntouch \"${normal_id}.peddy2cdm\""
+            tumor_cmds += "\ntouch \"${normal_id}.somalier.json\"\ntouch \"${normal_id}.peddy2cdm\"\n"
         }
 
         """
         echo "somalier2json.py --somalier $samples_stats $sample_args $args $args2"
-       
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            python: \$(python --version 2>&1| sed -e 's/Python //g')
-        END_VERSIONS
-        """
+        $tumor_cmds
+
+cat <<-END_VERSIONS > versions.yml
+"${task.process}":
+    python: \$(python --version 2>&1| sed -e 's/Python //g')
+END_VERSIONS
+        """     
 }
 
