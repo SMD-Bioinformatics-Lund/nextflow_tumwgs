@@ -142,7 +142,9 @@ process TNSCOPE_ML {
                 --min_tumor_allele_frac ${params.tnscope_var_freq_cutoff_up} \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz
+            tnscope_filter.py -t ${task.cpus} -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz --tumor_sample ${meta.id[tumor_idx]} --min_tumor_af 0.01 --min_depth 10 ${meta.id[tumor_idx]}.all.tnscope.vcf.gz
+
+            # sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
