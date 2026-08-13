@@ -54,9 +54,6 @@ process MANTA {
         }
         else {
             """
-            set +eu
-            source activate py2
-            set -eu
             configManta.py \\
                 --tumorBam $cram \\
                 $args \\

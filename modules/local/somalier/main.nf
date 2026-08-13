@@ -80,9 +80,11 @@ process SOMALIER_QC {
             // tumor-only: no normal to compare against, so run single-sample
             // somalier checks (sex/relatedness-independent QC) and skip the
             // pairwise pairedness/contamination comparison entirely.
+            // somalier relate --ped ${ped_tumor} --infer extracted/*.somalier $args2 -o ${group_id}
             """
             somalier extract -d extracted $args ${tumor_bam}
             somalier relate --ped ${ped_tumor} --infer extracted/*.somalier $args2 -o ${group_id}
+            touch ${group_id}.groups.tsv
             touch ${group_id}.contamination.tsv
 
             cat <<-END_VERSIONS > versions.yml
