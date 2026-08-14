@@ -68,44 +68,86 @@ sub add_info {
 }
 
 
-sub vcfstr {
-    my( $v, $sample_order ) = @_;
+# sub vcfstr {
+#     my( $v, $sample_order ) = @_;
 
-    my @all_info;
-    print $v->{CHROM}."\t".$v->{POS}."\t".$v->{ID}."\t".$v->{REF}."\t".$v->{ALT}."\t".$v->{QUAL}."\t".$v->{FILTER}."\t";
+#     my @all_info;
+#     print $v->{CHROM}."\t".$v->{POS}."\t".$v->{ID}."\t".$v->{REF}."\t".$v->{ALT}."\t".$v->{QUAL}."\t".$v->{FILTER}."\t";
 
-    # Generate and print INFO field
-    for my $info_key (@{$v->{INFO_order}}) {
-	    if( $info_key eq "CSQ" ) {
-	        push @all_info, "CSQ=".$v->{_csqstr};
-	    }
-	    else {
-	        push @all_info, $info_key."=".$v->{INFO}->{$info_key};
-	    }
-    }
-    print join(";", @all_info)."\t";
+#     # Generate and print INFO field
+#     for my $info_key (@{$v->{INFO_order}}) {
+# 	    if( $info_key eq "CSQ" ) {
+# 	        push @all_info, "CSQ=".$v->{_csqstr};
+# 	    }
+# 	    else {
+# 	        push @all_info, $info_key."=".$v->{INFO}->{$info_key};
+# 	    }
+#     }
+#     print join(";", @all_info)."\t";
 
-    # Print FORMAT field
-    print join(":", @{$v->{FORMAT}})."\t";
+#     # Print FORMAT field
+#     print join(":", @{$v->{FORMAT}})."\t";
 
 
-    my %order;
-    my $i=0;
-    if( $sample_order and @$sample_order > 0 ) {
-	    $order{$_} = $i++ foreach @{$sample_order};
-    }
-    else {
-	    $order{$_->{_sample_id}} = $i++ foreach @{$v->{GT}};
-    }
+#     my %order;
+#     my $i=0;
+#     if( $sample_order and @$sample_order > 0 ) {
+# 	    $order{$_} = $i++ foreach @{$sample_order};
+#     }
+#     else {
+# 	    $order{$_->{_sample_id}} = $i++ foreach @{$v->{GT}};
+#     }
 
-    # Print GT fields for all samples
-    for my $gt ( sort {$order{$a->{_sample_id}} <=> $order{$b->{_sample_id}}} @{$v->{GT}}) {
+#     # Print GT fields for all samples
+#     for my $gt ( sort {$order{$a->{_sample_id}} <=> $order{$b->{_sample_id}}} @{$v->{GT}}) {
 	
-    my @all_gt;
+#     my @all_gt;
+# 	for my $key ( @{$v->{FORMAT}} ) {
+# 	    push @all_gt, ( defined $gt->{$key} ? $gt->{$key} : "");
+# 	}
+# 	print join(":", @all_gt)."\t";
+#     }
+#     print "\n";
+# }
+
+sub vcfstr {
+    my $v = shift;
+ 
+    # Generate INFO field.
+    # NOTE: vcf2.pm parses CSQ (VEP) and ANN (SnpEff) into arrays of hashrefs
+    # (one hash per transcript annotation), but it also stashes the original,
+    # unparsed string on the variant as _csqstr / _annstr respectively. We
+    # must use those raw strings here instead of the parsed structures, since
+    # reconstructing the pipe-delimited order from a hash isn't reliable.
+    my @all_info;
+    for my $info_key (@{$v->{INFO_order}}) {
+	if( $info_key eq "CSQ" and defined $v->{_csqstr} ) {
+	    push @all_info, "CSQ=".$v->{_csqstr};
+	}
+	elsif( $info_key eq "ANN" and defined $v->{_annstr} ) {
+	    push @all_info, "ANN=".$v->{_annstr};
+	}
+	else {
+	    my $val = $v->{INFO}->{$info_key};
+	    $val = "" if !defined($val);
+	    push @all_info, $info_key."=".$val;
+	}
+    }
+ 
+    my @fields = (
+	$v->{CHROM}, $v->{POS}, $v->{ID}, $v->{REF}, $v->{ALT}, $v->{QUAL}, $v->{FILTER},
+	join(";", @all_info),
+	join(":", @{$v->{FORMAT}}),
+    );
+ 
+    # Add GT fields for all samples
+    for my $gt (@{$v->{GT}}) {
+	my @all_gt;
 	for my $key ( @{$v->{FORMAT}} ) {
 	    push @all_gt, ( defined $gt->{$key} ? $gt->{$key} : "");
 	}
-	print join(":", @all_gt)."\t";
+	push @fields, join(":", @all_gt);
     }
-    print "\n";
+ 
+    print join("\t", @fields)."\n";
 }

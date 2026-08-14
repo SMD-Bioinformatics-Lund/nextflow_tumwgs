@@ -179,7 +179,7 @@ process COMBINE_FUSIONS {
         cat a.txt b.txt > CMD_fusion.txt
 
         if [[ -s CMD_fusion.txt ]]; then
-                awk -F "\\t" 'BEGIN { OFS="\\t" } { print \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$(NF-3) ";PANEL=fusion|somatic|one", \$9, \$10, \$11 }' CMD_fusion.txt > Selected.txt
+                awk 'BEGIN { FS=OFS="\\t" } { \$8 = \$8 ";PANEL=fusion|somatic|one"; print }' CMD_fusion.txt > Selected.txt
         else
             touch Selected.txt
         fi
