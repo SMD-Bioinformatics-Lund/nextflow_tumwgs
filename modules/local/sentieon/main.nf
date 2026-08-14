@@ -108,23 +108,24 @@ process TNSCOPE_ML {
         def args5   = task.ext.args5    ?: ''
         def args6   = task.ext.args6    ?: ''
         def args7   = task.ext.args7    ?: ''
+        def args8   = task.ext.args8    ?: ''
 
         tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
 
         if( meta.id.size() >= 2 ) {
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             """
-            sentieon driver -t ${task.cpus} $args \\
+            sentieon driver -t ${task.cpus} $args $args2 \\
                 -i ${cram[tumor_idx]} -q ${bqsr[tumor_idx]} \\
                 -i ${cram[normal_idx]} -q ${bqsr[normal_idx]} \\
-                $args2 \\
-                --algo TNscope \\
                 $args3 \\
+                --algo TNscope \\
+                $args4 \\
                 --tumor_sample ${meta.id[tumor_idx]} --normal_sample ${meta.id[normal_idx]} \\
-                $args4  $args5 \\
+                $args5  $args6 \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args5 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz       
+            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args6 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz       
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -134,30 +135,24 @@ process TNSCOPE_ML {
         }
         else {
             """
-            sentieon driver -t ${task.cpus} $args \\
+            sentieon driver -t ${task.cpus} $args $args2 \\
                 -i ${cram[tumor_idx]} -q ${bqsr[tumor_idx]} \\
-                $args2 \\
                 --algo TNhaplotyper2 \\
-                $args3 \\
+                $args4 \\
                 --tumor_sample ${meta.id[tumor_idx]} \\
-                --germline_vcf $args6 \\
-                --pon $args7 \\
+                --germline_vcf $args7 \\
+                --pon $args8 \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus} $args \\
+            sentieon driver -t ${task.cpus} $args $args2 \\
                 -i ${cram[tumor_idx]} -q ${bqsr[tumor_idx]} \\
-                $args2 \\
                 --algo OrientationBias \\
                 --tumor_sample ${meta.id[tumor_idx]} \\
                 ${meta.id[tumor_idx]}.orientation.data
 
-            sentieon driver -t ${task.cpus} $args \\
+            sentieon driver -t ${task.cpus} $args $args2  \\
                 -i ${cram[tumor_idx]} -q ${bqsr[tumor_idx]} \\
-                $args2 --algo ContaminationModel \\
-                --tumor_sample ${meta.id[tumor_idx]} \\
-                --vcf $args6 \\
-                --tumor_segments ${meta.id[tumor_idx]}.contamination.segments \\
-                ${meta.id[tumor_idx]}.contamination.data
+                --algo ContaminationModel --tumor_sample ${meta.id[tumor_idx]} --vcf $args7  --tumor_sample ${meta.id[tumor_idx]}.contamination.segments ${meta.id[tumor_idx]}.contamination.data
 
             sentieon driver -t ${task.cpus} $args \\
                 --algo TNfilter \\
