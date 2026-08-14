@@ -153,11 +153,11 @@ process TNSCOPE_ML {
 
             sentieon driver -t ${task.cpus} $args \\
                 -i ${cram[tumor_idx]} -q ${bqsr[tumor_idx]} \\
-                $args2 \\    
-                --algo ContaminationModel \\
+                $args2 --algo ContaminationModel \\
                 --tumor_sample ${meta.id[tumor_idx]} \\
                 --vcf $args6 \\
-                --tumor_segments ${meta.id[tumor_idx]}.contamination.segments ${meta.id[tumor_idx]}.contamination.data
+                --tumor_segments ${meta.id[tumor_idx]}.contamination.segments \\
+                ${meta.id[tumor_idx]}.contamination.data
 
             sentieon driver -t ${task.cpus} $args \\
                 --algo TNfilter \\
