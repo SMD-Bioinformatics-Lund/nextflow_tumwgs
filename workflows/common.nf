@@ -7,6 +7,7 @@ include { BAM_QC                        } from '../subworkflows/local/bam_qc'
 include { DUX4IGH_CALLING               } from '../subworkflows/local/dux4_igh'
 include { SNV_CALLING                   } from '../subworkflows/local/snv_calling'
 include { SNV_ANNOTATE                  } from '../subworkflows/local/snv_annotate'
+include { GERMLINE_ANNOTATE             } from '../subworkflows/local/germline_annotate'
 include { CNV_CALLING                   } from '../subworkflows/local/cnv_calling_wgs'
 include { SV_CALLING                    } from '../subworkflows/local/sv_calling'
 include { VISUALIZE                     } from '../subworkflows/local/visualize'
@@ -88,6 +89,13 @@ workflow SWGP_COMMON {
     )
     .set { ch_vcf_anno }
     ch_versions = ch_versions.mix(ch_vcf_anno.versions)
+
+
+    GERMLINE_ANNOTATE (
+        ch_vcf.germline_combined_vcf
+    )
+    .set { ch_germline_anno }
+    ch_versions = ch_versions.mix(ch_germline_anno.versions)
 
 
     CNV_CALLING ( 

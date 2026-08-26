@@ -1,5 +1,52 @@
 {
     "genes": [
         "CEBPA"
-    ]   
+    ],
+    "inclusion_score" : 2,
+    "gnomad_cutoff" : 0.01,
+    "consequence_cutoff" : 5,
+    "clinvar" : {
+        "Benign" : -2,
+        "Likely_benign" : -1,
+        "Pathogenic" : 1,
+        "Likely_pathogenic" : 1
+    },
+    "consequence_score" : {
+        "transcript_ablation" : 10,
+        "initiator_codon_variant" : 9,
+        "frameshift_variant" : 11,
+        "stop_gained" : 8,
+        "start_lost" : 8,
+        "stop_lost" : 8,
+        "splice_acceptor_variant" : 8,
+        "splice_donor_variant" : 8,
+        "inframe_deletion" : 7,
+        "transcript_amplification" : 5,
+        "splice_region_variant" : 5,
+        "missense_variant" : 5,
+        "protein_altering_variant" : 5,
+        "inframe_insertion" : 5,
+        "incomplete_terminal_codon_variant" : 5,
+        "non_coding_transcript_exon_variant" : 3,
+        "synonymous_variant" : 2,
+        "mature_mirna_variant" : 1,
+        "non_coding_transcript_variant" : 1,
+        "regulatory_region_variant" : 1,
+        "upstream_gene_variant" : 1,
+        "regulatory_region_amplification" : 1,
+        "tfbs_amplification" : 1,
+        "5_prime_UTR_variant" : 1,
+        "intron_variant" : 1,
+        "3_prime_UTR_variant" : 1,
+        "feature_truncation" : 1,
+        "TF_binding_site_variant" : 1,
+        "stop_retained_variant" : 1,
+        "feature_elongation" : 1,
+        "regulatory_region_ablation" : 1,
+        "tfbs_ablation" : 1,
+        "coding_sequence_variant" : 1,
+        "downstream_gene_variant" : 1,
+        "NMD_transcript_variant" : 1,
+        "intergenic_variant" : 0
+    }
 }

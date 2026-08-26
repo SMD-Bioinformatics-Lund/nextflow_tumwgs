@@ -683,4 +683,42 @@ process DNASCOPE {
         """
 }
 
+process GVCF_COMBINE {
+    label 'process_medium'
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(gvcf), file(tbi)
+
+    output:
+        tuple val(group), val(meta), file("${group}.germline.combined.vcf.gz"), file("${group}.germline.combined.vcf.gz.tbi"), emit: combined_vcf
+        path "versions.yml", emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def args    = task.ext.args ?: ""   // reference and common arguments for driver
+        def gvcfs   = gvcf.collect{ "-v ${it}" }.join(' ')
+
+        """
+        sentieon driver -t ${task.cpus} $args --algo GVCFtyper $gvcfs ${group}.germline.combined.vcf.gz
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+
+    stub:
+        """
+        touch ${group}.germline.combined.vcf.gz ${group}.germline.combined.vcf.gz.tbi
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+}
+
 

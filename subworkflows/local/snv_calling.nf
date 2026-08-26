@@ -6,6 +6,7 @@ include { TNSCOPE_ML               } from '../../modules/local/sentieon/main'
 include { TNSCOPE_FILTER           } from '../../modules/local/sentieon/main'
 include { DEEPSOMATIC              } from '../../modules/local/deepSomatic/main'
 include { DNASCOPE                 } from '../../modules/local/sentieon/main'
+include { GVCF_COMBINE             } from '../../modules/local/sentieon/main'
 include { PINDEL_CONFIG            } from '../../modules/local/pindel/main'
 include { PINDEL_CALLING           } from '../../modules/local/pindel/main'
 include { CONCATENATE_VCFS         } from '../../modules/local/concatenate_vcfs/main'
@@ -68,11 +69,16 @@ workflow SNV_CALLING {
         DNASCOPE { cram_dedup.groupTuple(by:[0,1])}
         ch_versions         = ch_versions.mix(DNASCOPE.out.versions)
 
+        // Joint-genotype each case's per-sample DNAscope GVCFs into one real VCF //
+        GVCF_COMBINE { DNASCOPE.out.dnascope_vcf.groupTuple(by:0) }
+        ch_versions         = ch_versions.mix(GVCF_COMBINE.out.versions)
+
     emit:
-        concat_vcfs     =   CONCATENATE_VCFS.out.concatenated_vcfs                  // channel: [ val(group), val(vc), file(vcf.gz) ]
-        agg_vcf         =   AGGREGATE_VCFS.out.vcf_concat                           // channel: [ val(group), val(meta), file(agg.vcf) ]
-        dnascope_vcf    =   DNASCOPE.out.dnascope_vcf                               // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
-        tnscope_vcf     =   TNSCOPE_FILTER.out.tnscope_filtered_vcf                 // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
-        versions        =   ch_versions                                             // channel: [ file(versions) ]
+        concat_vcfs         =   CONCATENATE_VCFS.out.concatenated_vcfs                  // channel: [ val(group), val(vc), file(vcf.gz) ]
+        agg_vcf             =   AGGREGATE_VCFS.out.vcf_concat                           // channel: [ val(group), val(meta), file(agg.vcf) ]
+        dnascope_vcf        =   DNASCOPE.out.dnascope_vcf                               // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
+        germline_combined_vcf = GVCF_COMBINE.out.combined_vcf                           // channel : [ val(group), val(meta), file(vcf.gz), file(vcf.gz.tbi) ]
+        tnscope_vcf         =   TNSCOPE_FILTER.out.tnscope_filtered_vcf                 // channel : [ val(group), val(meta), file(vcf), file(vcf.gz) ]
+        versions            =   ch_versions                                             // channel: [ file(versions) ]
 
 }
