@@ -8,11 +8,11 @@ process CREATE_PED_FILES {
     output:
         tuple val(group_id), val(meta), path("${meta.group}_${meta.id}_base.ped"), emit: ped_file
         path "versions.yml",                                                       emit: versions
-        
+
     script:
         def father = meta.father ?: "0"
         def mother = meta.mother ?: "0"
-        def phenotype = meta.phenotype ?: "0"  
+        def phenotype = meta.phenotype ?: "0"
 
         """
         create_ped.pl --mother ${mother} --father ${father} --group ${meta.group} --id ${meta.id} --sex ${meta.sex}
@@ -26,7 +26,7 @@ process CREATE_PED_FILES {
     stub:
         def father = meta.father ?: "0"
         def mother = meta.mother ?: "0"
-        def phenotype = meta.phenotype ?: "0"  
+        def phenotype = meta.phenotype ?: "0"
 
         """
         touch ${meta.group}_${meta.id}_base.ped
@@ -47,7 +47,7 @@ process SOMALIER_QC {
         tuple val(group_id), val(meta), file(crams), file(crai), file(bai), file (ped_files)
 
     output:
-        tuple val(group_id), val(meta), file("*.samples.tsv"), file("*.pairs.tsv"),  file("*.groups.tsv"), file("*.contamination.tsv"), emit: somalier_check
+        tuple val(group_id), val(meta), file("*.samples.tsv"), emit: somalier_check
         path "versions.yml", emit: versions
 
     script:
@@ -113,8 +113,8 @@ process SOMALIER2CDM {
     label "process_single"
     tag "${meta.id}"
 
-    input: 
-        tuple val(group), val(meta), file(samples_stats), file(pairs_stats),  file(groups), file(contamination)
+    input:
+        tuple val(group), val(meta), file(samples_stats)
 
     output:
         tuple val(group), val(meta), path("*somalier.json"), emit: json
@@ -179,6 +179,5 @@ cat <<-END_VERSIONS > versions.yml
 "${task.process}":
     python: \$(python --version 2>&1| sed -e 's/Python //g')
 END_VERSIONS
-        """     
+        """
 }
-
