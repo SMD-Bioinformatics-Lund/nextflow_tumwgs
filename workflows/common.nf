@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 include { CHECK_INPUT                   } from '../subworkflows/local/create_meta'
 include { SAMPLE                        } from '../subworkflows/local/sample'
 include { ALIGN_SENTIEON                } from '../subworkflows/local/align_sentieon'
+include { ALIGN_BAM_CRAM                } from '../subworkflows/local/align_bam_cram'
 include { BAM_QC                        } from '../subworkflows/local/bam_qc'
 include { DUX4IGH_CALLING               } from '../subworkflows/local/dux4_igh'
 include { SNV_CALLING                   } from '../subworkflows/local/snv_calling'
@@ -33,20 +34,20 @@ Channel
     .set { ch_beds }
 
 workflow SWGP_COMMON {
-    
+
     ch_versions = Channel.empty()
 
     // Checks input, creates meta-channel and decides whether data should be downsampled //
     CHECK_INPUT ( Channel.fromPath(csv), params.paired )
 
     // Downsample if meta.sub == value and not false //
-    SAMPLE ( CHECK_INPUT.out.fastq )  
+    SAMPLE ( CHECK_INPUT.out.fastq )
     .set{ ch_trim }
     ch_versions = ch_versions.mix(ch_trim.versions)
 
     CHECK_INPUT.out.meta.view()
     // Do alignment if downsample was false and mix with SAMPLE subworkflow output
-    ALIGN_SENTIEON ( 
+    ALIGN_SENTIEON (
         ch_bwa_shards,
         ch_trim.fastq_trim,
         CHECK_INPUT.out.meta
@@ -54,26 +55,41 @@ workflow SWGP_COMMON {
     .set { ch_mapped }
     ch_versions = ch_versions.mix(ch_mapped.versions)
 
+    // Rows whose samplesheet points directly at a bam/cram instead of fastq skip
+    // BWA entirely and join back in here, with the same channel shapes ALIGN_SENTIEON
+    // produces (see subworkflows/local/align_bam_cram.nf).
+    ALIGN_BAM_CRAM (
+        CHECK_INPUT.out.bam,
+        CHECK_INPUT.out.cram
+    )
+    .set { ch_mapped_bamcram }
+    ch_versions = ch_versions.mix(ch_mapped_bamcram.versions)
+
+    ch_bam_bqsr        = ch_mapped.bam_bqsr.mix(ch_mapped_bamcram.bam_bqsr)
+    ch_cram_dedup      = ch_mapped.cram_dedup.mix(ch_mapped_bamcram.cram_dedup)
+    ch_cram_bqsr       = ch_mapped.cram_bqsr.mix(ch_mapped_bamcram.cram_bqsr)
+    ch_dedup_metrics   = ch_mapped.dedup_metrics.mix(ch_mapped_bamcram.dedup_metrics)
+
     BAM_QC (
-        ch_mapped.bam_bqsr,
-        ch_mapped.cram_dedup,
-        ch_mapped.dedup_metrics,
-        CHECK_INPUT.out.meta 
+        ch_bam_bqsr,
+        ch_cram_dedup,
+        ch_dedup_metrics,
+        CHECK_INPUT.out.meta
     )
     .set { ch_qc }
     ch_versions = ch_versions.mix(ch_qc.versions)
-    
+
     DUX4IGH_CALLING (
-            ch_mapped.cram_dedup,
+            ch_cram_dedup,
             CHECK_INPUT.out.meta
         )
     .set { ch_dux4_igh }
     ch_versions = ch_versions.mix(ch_dux4_igh.versions)
-    
-    SNV_CALLING ( 
-        ch_mapped.bam_bqsr.groupTuple(),
-        ch_mapped.cram_dedup,
-        ch_mapped.cram_bqsr.groupTuple(),
+
+    SNV_CALLING (
+        ch_bam_bqsr.groupTuple(),
+        ch_cram_dedup,
+        ch_cram_bqsr.groupTuple(),
         ch_beds,
         CHECK_INPUT.out.meta,
         ch_qc.dedup_cram_is_metrics.groupTuple(),
@@ -98,28 +114,28 @@ workflow SWGP_COMMON {
     ch_versions = ch_versions.mix(ch_germline_anno.versions)
 
 
-    CNV_CALLING ( 
-        ch_mapped.cram_dedup, 
+    CNV_CALLING (
+        ch_cram_dedup,
         CHECK_INPUT.out.meta
     )
     .set { ch_cnvcalled }
     ch_versions = ch_versions.mix(ch_cnvcalled.versions)
-    
-    
+
+
     SV_CALLING (
-                ch_mapped.cram_dedup.groupTuple(), 
+                ch_cram_dedup.groupTuple(),
                 CHECK_INPUT.out.meta,
     )
     .set { ch_svcalled }
     ch_versions = ch_versions.mix(ch_svcalled.versions)
-    
+
     VISUALIZE (
-                ch_vcf.dnascope_vcf, 
+                ch_vcf.dnascope_vcf,
                 ch_cnvcalled.count,
     )
     .set { ch_visualize }
     ch_versions = ch_versions.mix(ch_visualize.versions)
-    
+
     ADD_TO_DB (
         ch_vcf_anno.finished_vcf,
         ch_cnvcalled.bed,
@@ -127,8 +143,8 @@ workflow SWGP_COMMON {
         ch_svcalled.fusions,
         ch_cnvcalled.tum_plot,
     )
-    
-    
+
+
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml', newLine: true) { "---\n" + it.text },
         CHECK_INPUT.out.meta

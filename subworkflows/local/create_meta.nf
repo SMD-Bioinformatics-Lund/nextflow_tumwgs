@@ -75,6 +75,10 @@ def create_fastq_channel(LinkedHashMap row, paired) {
     meta.sex                = (row.containsKey("sex") ? row.sex : false)
 	meta.clarity_pool_id    = row.clarity_pool_id
     meta.paired             = paired
+    // Only meaningful for bam/cram-input rows: 'raw' (needs dedup+realign+BQSR, the
+    // default) or 'processed' (already dedup+realign+BQSR'd, e.g. reused from a
+    // previous run of this pipeline) - see ALIGN_BAM_CRAM.
+    meta.bam_state          = (row.containsKey("bam_state") && row.bam_state) ? row.bam_state : "raw"
     def sub = false
     if (meta.reads && params.sample) {
         if (meta.reads.toInteger() > params.sample_val) {

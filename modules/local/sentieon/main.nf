@@ -10,7 +10,7 @@ process TNSCOPE {
     output:
         tuple val(group), val(meta), file("${meta.id[tumor_idx]}.tnscope.vcf.gz"), emit: tnscope_vcf
         path "versions.yml", emit: versions
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -60,7 +60,7 @@ process TNSCOPE {
             "${task.process}":
                 sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
             END_VERSIONS
-            """ 
+            """
         }
 
 
@@ -70,7 +70,7 @@ process TNSCOPE {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             out_vcf = "${meta.id[tumor_idx]}.tnscope.vcf.gz"
-        
+
             """
             touch ${out_vcf}
 
@@ -125,7 +125,7 @@ process TNSCOPE_ML {
                 $args5  $args6 \\
                 ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz
 
-            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args6 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz       
+            sentieon driver -t ${task.cpus}  $args --algo TNModelApply $args6 -v ${meta.id[tumor_idx]}.pre.tnscope.vcf.gz ${meta.id[tumor_idx]}.all.tnscope.vcf.gz
 
             cat <<-END_VERSIONS > versions.yml
             "${task.process}":
@@ -172,7 +172,7 @@ process TNSCOPE_ML {
 
 
     stub:
-    
+
         tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         out_vcf = "${meta.id[tumor_idx]}.all.tnscope.vcf.gz"
 
@@ -194,7 +194,7 @@ process TNSCOPE_FILTER {
 
     input:
         tuple val(group), val(meta), file(vcf)
-        
+
     output:
         tuple val(group), val("tnscope"), file("*_tnscope.vcf.gz"), emit: tnscope_filtered_vcf
         path "versions.yml",                                        emit: versions
@@ -209,7 +209,7 @@ process TNSCOPE_FILTER {
         def args3   = task.ext.args3               ?: ''
         def args4   = task.ext.args4               ?: ''
         """
-        
+
         bcftools norm $args ${vcf} |vcfuniq | bcftools filter $args2 -o ${prefix}.norm.uniq.pass.vcf.gz
         bcftools index -t ${prefix}.norm.uniq.pass.vcf.gz
         bedtools intersect -a ${prefix}.norm.uniq.pass.vcf.gz $args3 | bcftools view $args4 -o ${prefix}_tnscope.vcf.gz
@@ -254,7 +254,7 @@ process BWA_ALIGN_SHARD {
         task.ext.when == null || task.ext.when
 
     script:
-        def args    = task.ext.args     ?: ''                       
+        def args    = task.ext.args     ?: ''
         def args2   = task.ext.args2    ?: ''
         def args3   = task.ext.args3    ?: ''
 
@@ -275,7 +275,7 @@ process BWA_ALIGN_SHARD {
             bwa: \$(echo \$(sentieon bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
         END_VERSIONS
         """
-    
+
     stub:
         out_bam = shard+"."+meta.id+"."+meta.type+".bwa.sort.bam"
 
@@ -301,27 +301,27 @@ process BWA_MERGE_SHARDS {
     label 'scratch'
     label 'stage'
     tag "${meta.id}"
-    
+
     input:
         tuple val(id), val(group), val(meta), file(shard_bams), file(shard_bams_bai)
 
     output:
         tuple val(group), val(meta), file("${prefix}.bwa.sort.bam"), file("${prefix}.bwa.sort.bam.bai"),  emit: merged_bam
         path "versions.yml",                                        emit: versions
-   
+
     when:
         task.ext.when == null || task.ext.when
 
     script:
         // group= meta.group.first()
-        // meta2 = meta.unique() // should keep the original structure 
+        // meta2 = meta.unique() // should keep the original structure
         shard_bams = shard_bams.sort(false) { a, b -> a.getBaseName() <=> b.getBaseName() } .join(' ')
         // out_bam = meta.id.first()+"."+meta.type.first()+".bwa.sort.bam"
         prefix = task.ext.prefix ?: "${meta.id}.${meta.type}"
 
         """
         sentieon util merge -o ${prefix}.bwa.sort.bam ${shard_bams}
-        
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
@@ -355,15 +355,15 @@ process BAM_CRAM{
     output:
         tuple val(group), val(meta), file("${prefix}.sort.cram"), file("${prefix}.sort.cram.crai"), file("${prefix}.sort.cram.bai"),    emit: cram_merged
         path "versions.yml",                                                                                                            emit: versions
-   
+
 
     script:
-        def args    = task.ext.args     ?: ''                  
+        def args    = task.ext.args     ?: ''
         prefix = task.ext.prefix ?: "${meta.id}.${meta.type}"
 
         """
         sentieon driver -t ${task.cpus} -i ${mergedbam} ${args} ${prefix}.sort.cram
-        
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
@@ -374,8 +374,8 @@ process BAM_CRAM{
         prefix = task.ext.prefix ?: "${meta.id}.${meta.type}"
 
         """
-        touch ${prefix}.sort.cram 
-        touch ${prefix}.sort.cram.crai 
+        touch ${prefix}.sort.cram
+        touch ${prefix}.sort.cram.crai
         touch ${prefix}.sort.cram.bai
 
         cat <<-END_VERSIONS > versions.yml
@@ -393,7 +393,7 @@ process MARKDUP {
     label 'scratch'
     label 'stage'
     tag "${meta.id}"
-    
+
     input:
         tuple val(group), val(meta), file(cram), file(crai), file(bai)
 
@@ -406,7 +406,7 @@ process MARKDUP {
         task.ext.when == null || task.ext.when
 
     script:
-        def args    = task.ext.args     ?: ""                       
+        def args    = task.ext.args     ?: ""
         def args2   = task.ext.args2    ?: ""
         def args3   = task.ext.args3    ?: ""
         def prefix  = task.ext.prefix   ?: ""
@@ -430,7 +430,7 @@ process MARKDUP {
         """
 
     stub:
-        def args    = task.ext.args     ?: ""                       
+        def args    = task.ext.args     ?: ""
         def args2   = task.ext.args2    ?: ""
         def prefix  = task.ext.prefix   ?: ""
 
@@ -488,7 +488,7 @@ process REALIGN_INDEL_BQSR {
     stub:
         out_cram = meta.id+"."+meta.type+".sort.dedup.realign.cram"
         """
-        touch ${out_cram} ${out_cram}.crai ${out_cram}.bai 
+        touch ${out_cram} ${out_cram}.crai ${out_cram}.bai
         touch ${out_cram}.bqsr.table
 
         cat <<-END_VERSIONS > versions.yml
@@ -506,8 +506,8 @@ process SENTIEON_QC {
         tuple val(group), val(meta), file(cram), file(crai), file(bai), file(dedup)
 
     output:
-        tuple   val(group), 
-                val(meta), 
+        tuple   val(group),
+                val(meta),
                 path("mq_metrics.txt"),
 				path("qd_metrics.txt"),
                 path("gc_summary.txt"),
@@ -522,7 +522,7 @@ process SENTIEON_QC {
         task.ext.when == null || task.ext.when
 
     script:
-        def args    = task.ext.args     ?: ""   // reference 
+        def args    = task.ext.args     ?: ""   // reference
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
         sentieon driver $args \\
@@ -531,9 +531,9 @@ process SENTIEON_QC {
             --algo GCBias --summary gc_summary.txt gc_metrics.txt --algo AlignmentStat aln_metrics.txt \\
             --algo InsertSizeMetricAlgo is_metrics.txt \\
             --algo WgsMetricsAlgo wgs_metrics.txt
-        
+
         cp is_metrics.txt ${prefix}_is_metrics.txt
-        
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
@@ -544,11 +544,11 @@ process SENTIEON_QC {
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
         touch mq_metrics.txt
-        touch qd_metrics.txt   
-        touch gc_summary.txt    
-        touch gc_metrics.txt    
-        touch aln_metrics.txt   
-        touch is_metrics.txt    
+        touch qd_metrics.txt
+        touch gc_summary.txt
+        touch gc_metrics.txt
+        touch aln_metrics.txt
+        touch is_metrics.txt
         touch wgs_metrics.txt
         touch ${prefix}_${meta.type}.QC
         touch ${prefix}_is_metrics.txt
@@ -560,7 +560,7 @@ process SENTIEON_QC {
         """
 }
 
-process COLLECT_QC {    
+process COLLECT_QC {
     label 'process_medium'
     tag "${meta.id}"
 
@@ -573,7 +573,7 @@ process COLLECT_QC {
 
     when:
         task.ext.when == null || task.ext.when
-    
+
     script:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
@@ -584,7 +584,7 @@ process COLLECT_QC {
             sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
         END_VERSIONS
         """
-    
+
     stub:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
@@ -612,7 +612,7 @@ process CRAM_TO_BAM {
         path "versions.yml",                                                     emit: versions
 
     script:
-        def args    = task.ext.args ?: "" 
+        def args    = task.ext.args ?: ""
         out_bam = "${meta.id}.${meta.type}.sort.dedup.realign.bam"
 
         """
@@ -624,7 +624,7 @@ process CRAM_TO_BAM {
             samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
         END_VERSIONS
         """
-    
+
     stub:
         out_bam = meta.id+"."+meta.type+".sort.dedup.realign.bam"
 
@@ -637,6 +637,122 @@ process CRAM_TO_BAM {
         END_VERSIONS
         """
 
+}
+
+// Used by ALIGN_BAM_CRAM to add a .bai alongside a user-supplied cram+crai:
+// this pipeline's downstream sentieon/samtools calls expect a cram to travel
+// with both index kinds, but a cram row in the samplesheet only carries a crai.
+process CRAM_INDEX {
+    label 'process_alot'
+    label 'scratch'
+    label 'stage'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta), file(cram), file(crai)
+
+    output:
+        tuple val(group), val(meta), file(cram), file(crai), file("${cram}.bai"), emit: cram_bai
+        path "versions.yml",                                                      emit: versions
+
+    script:
+        """
+        samtools index -@ ${task.cpus} -b ${cram} ${cram}.bai
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
+        """
+
+    stub:
+        """
+        touch ${cram}.bai
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools 2>&1) | sed 's/.*Version: //; s/ .*//')
+        END_VERSIONS
+        """
+}
+
+// Used by ALIGN_BAM_CRAM for a 'processed' (already dedup+realign+BQSR'd) bam/cram
+// row: variant callers such as TNSCOPE_ML still need a BQSR table alongside the
+// cram, so it's (re)generated here without repeating Realigner/Dedup.
+process QUALCAL_ONLY {
+    label 'process_alot'
+    label 'scratch'
+    label 'stage'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta), file(cram), file(crai), file(bai)
+
+    output:
+        tuple val(group), val(meta), file(cram), file(crai), file(bai), file("${prefix}.bqsr.table"), emit: cram_varcall
+        path "versions.yml",                                                                          emit: versions
+
+    script:
+        def args    = task.ext.args     ?: ""   // reference and common arguments for driver
+        def args3   = task.ext.args3    ?: ""   // algo specific arguments
+        prefix = task.ext.prefix ?: "${meta.id}"
+
+        """
+        sentieon driver $args -t ${task.cpus} -i $cram --algo QualCal $args3 ${prefix}.bqsr.table
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+
+    stub:
+        prefix = task.ext.prefix ?: "${meta.id}"
+        """
+        touch ${prefix}.bqsr.table
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+}
+
+// Used by ALIGN_BAM_CRAM for a 'processed' bam/cram row: there is no real Dedup
+// step to report metrics from, but SENTIEON_QC (BAM_QC) inner-joins bam_dedup
+// against dedup_metrics by [group, meta], so a placeholder file keeps that sample
+// from silently dropping out of QC. Downstream QC parsers should treat this
+// sample's dedup-rate figures as unavailable.
+process DEDUP_METRICS_PLACEHOLDER {
+    label 'process_single'
+    tag "${meta.id}"
+
+    input:
+        tuple val(group), val(meta)
+
+    output:
+        tuple val(group), val(meta), file("*dedup_metrics.txt"), emit: cram_metric
+        path "versions.yml",                                     emit: versions
+
+    script:
+        """
+        echo "# no Dedup metrics: ${meta.id}.${meta.type} resumed from an already-processed bam/cram" > ${meta.id}.${meta.type}.placeholder.dedup_metrics.txt
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
+
+    stub:
+        """
+        touch ${meta.id}.${meta.type}.placeholder.dedup_metrics.txt
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            sentieon: \$(echo \$(sentieon driver --version 2>&1) | sed -e "s/sentieon-genomics-//g")
+        END_VERSIONS
+        """
 }
 
 process DNASCOPE {
@@ -720,5 +836,3 @@ process GVCF_COMBINE {
         END_VERSIONS
         """
 }
-
-
