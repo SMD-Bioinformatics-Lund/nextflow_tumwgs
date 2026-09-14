@@ -104,6 +104,7 @@ process COYOTE_YAML {
         tumor_sequencing_run = meta.sequencing_run[tumor_idx] ?: null
         tumor_purity = meta.purity[tumor_idx] ? meta.purity[tumor_idx].toFloat() : null
         normal_sample = null
+
         clarity_control_id = null
         clarity_control_pool_id = null
         control_reads = null
@@ -139,7 +140,7 @@ process COYOTE_YAML {
         echo --- > ${process_group}.coyote3.yaml
         echo name: \\'${process_group}\\' >> ${process_group}.coyote3.yaml
         echo assay: \\'$params.coyote_group\\' >> ${process_group}.coyote3.yaml
-        echo subpanel: \\'${meta.diagnosis[tumor_idx]}\\' >> ${process_group}.coyote3.yaml 
+        echo subpanel: \\'${meta.diagnosis[tumor_idx]}\\' >> ${process_group}.coyote3.yaml
         echo sequencing_scope: \\'WGS\\' >> ${process_group}.coyote3.yaml
         echo omics_layer: \\'DNA\\' >> ${process_group}.coyote3.yaml
         echo sequencing_technology: \\'Illumina\\' >> ${process_group}.coyote3.yaml
@@ -152,6 +153,8 @@ process COYOTE_YAML {
         echo case_reads: ${tumor_reads} >> ${process_group}.coyote3.yaml
         echo case_purity: ${tumor_purity} >> ${process_group}.coyote3.yaml
         echo control_id: \\'${normal_sample}\\' >> ${process_group}.coyote3.yaml
+        echo clarity_case_id: \\'${meta.clarity_sample_id[tumor_idx]}\\' >> ${process_group}.coyote3.yaml
+        echo clarity_control_id: \\'${clarity_control_id}\\' >> ${process_group}.coyote3.yaml
         echo clarity_case_pool_id: \\'${meta.clarity_pool_id[tumor_idx]}\\' >> ${process_group}.coyote3.yaml
         echo clarity_control_pool_id: \\'${clarity_control_pool_id}\\' >> ${process_group}.coyote3.yaml
         echo control_sequencing_run: \\'${control_sequencing_run}\\' >> ${process_group}.coyote3.yaml
@@ -211,7 +214,7 @@ process COYOTE_YAML {
         echo --- > ${process_group}.coyote3.yaml
         echo name: \\'${process_group}\\' >> ${process_group}.coyote3.yaml
         echo assay: \\'$params.coyote_group\\' >> ${process_group}.coyote3.yaml
-        echo subpanel: \\'${meta.diagnosis[tumor_idx]}\\' >> ${process_group}.coyote3.yaml 
+        echo subpanel: \\'${meta.diagnosis[tumor_idx]}\\' >> ${process_group}.coyote3.yaml
         echo sequencing_scope: \\'WGS\\' >> ${process_group}.coyote3.yaml
         echo omics_layer: \\'DNA\\' >> ${process_group}.coyote3.yaml
         echo sequencing_technology: \\'Illumina\\' >> ${process_group}.coyote3.yaml
@@ -224,6 +227,8 @@ process COYOTE_YAML {
         echo case_reads: ${tumor_reads} >> ${process_group}.coyote3.yaml
         echo case_purity: ${tumor_purity} >> ${process_group}.coyote3.yaml
         echo control_id: \\'${normal_sample}\\' >> ${process_group}.coyote3.yaml
+        echo clarity_case_id: \\'${meta.clarity_sample_id[tumor_idx]}\\' >> ${process_group}.coyote3.yaml
+        echo clarity_control_id: \\'${clarity_control_id}\\' >> ${process_group}.coyote3.yaml
         echo clarity_case_pool_id: \\'${meta.clarity_pool_id[tumor_idx]}\\' >> ${process_group}.coyote3.yaml
         echo clarity_control_pool_id: \\'${clarity_control_pool_id}\\' >> ${process_group}.coyote3.yaml
         echo control_sequencing_run: \\'${control_sequencing_run}\\' >> ${process_group}.coyote3.yaml
@@ -233,7 +238,7 @@ process COYOTE_YAML {
         echo genome_build: 38 >> ${process_group}.coyote3.yaml
         echo vcf_files: /access/${params.subdir}/vcf/${vcf} >> ${process_group}.coyote3.yaml
         echo cnvprofile: /access/${params.subdir}/cov/${tumPlot} >> ${process_group}.coyote3.yaml
-        echo transloc: /access/${params.subdir}/manta/${fusions} >> ${process_group}.coyote3.yaml
+        echo transloc: /access/${params.subdir}/vcf/${fusions} >> ${process_group}.coyote3.yaml
         echo cnv: /access/${params.subdir}/cnv/${cnv} >> ${process_group}.coyote3.yaml
         echo pipeline: \\'${workflow.manifest.name}\\' >> ${process_group}.coyote3.yaml
         echo pipeline_version: ${workflow.manifest.version} >> ${process_group}.coyote3.yaml
