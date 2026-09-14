@@ -19,12 +19,12 @@ system("zgrep ^## $vcf_fn");
 system("zgrep ^#CHROM $vcf_fn");
 
 while ( my $v = $vcf->next_var() ) {
-    if (is_in_panel($v, \%panel) or !$hard_filter) {
-	    vcfstr($v);
-    }
-    else {
-         vcfstr($v);   
-    }
+    # is_in_panel() has the side effect of tagging INFO/PANEL, so it must run
+    # even when hard filtering is off. Variants failing both checks must be
+    # dropped, not printed — do not add an else branch here that calls
+    # vcfstr() unconditionally, that silently disables hard filtering.
+    next unless is_in_panel($v, \%panel) or !$hard_filter;
+    vcfstr($v);
 }
 
 
@@ -60,7 +60,7 @@ sub read_panel {
     }
     return %panel;
 }
-       
+
 sub add_info {
     my( $var, $key, $val ) = @_;
     push( @{$var->{INFO_order}}, $key );
@@ -100,7 +100,7 @@ sub add_info {
 
 #     # Print GT fields for all samples
 #     for my $gt ( sort {$order{$a->{_sample_id}} <=> $order{$b->{_sample_id}}} @{$v->{GT}}) {
-	
+
 #     my @all_gt;
 # 	for my $key ( @{$v->{FORMAT}} ) {
 # 	    push @all_gt, ( defined $gt->{$key} ? $gt->{$key} : "");
@@ -112,7 +112,7 @@ sub add_info {
 
 sub vcfstr {
     my $v = shift;
- 
+
     # Generate INFO field.
     # NOTE: vcf2.pm parses CSQ (VEP) and ANN (SnpEff) into arrays of hashrefs
     # (one hash per transcript annotation), but it also stashes the original,
@@ -133,13 +133,13 @@ sub vcfstr {
 	    push @all_info, $info_key."=".$val;
 	}
     }
- 
+
     my @fields = (
 	$v->{CHROM}, $v->{POS}, $v->{ID}, $v->{REF}, $v->{ALT}, $v->{QUAL}, $v->{FILTER},
 	join(";", @all_info),
 	join(":", @{$v->{FORMAT}}),
     );
- 
+
     # Add GT fields for all samples
     for my $gt (@{$v->{GT}}) {
 	my @all_gt;
@@ -148,6 +148,6 @@ sub vcfstr {
 	}
 	push @fields, join(":", @all_gt);
     }
- 
+
     print join("\t", @fields)."\n";
 }
