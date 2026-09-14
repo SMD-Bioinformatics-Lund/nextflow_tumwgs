@@ -3,8 +3,8 @@ process PON_FILTER {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf) 
-        
+        tuple val(group), val(meta), file(vcf)
+
     output:
         tuple val(group), val(meta), file("*.agg.pon.vcf"), emit: vcf_pon
         path "versions.yml",                                emit: versions
@@ -50,7 +50,7 @@ process ANNOTATE_VEP {
 
     input:
         tuple val(group), val(meta), file(vcf)
-        
+
     output:
         tuple val(group), val(meta), file("*.vep.vcf"), emit: vcf_vep
         path "versions.yml",                            emit: versions
@@ -82,7 +82,7 @@ process ANNOTATE_VEP {
         "${task.process}":
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
-        """ 
+        """
 }
 
 process FILTER_PANEL{
@@ -91,13 +91,13 @@ process FILTER_PANEL{
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf) 
+        tuple val(group), val(meta), file(vcf)
 
     output:
         tuple val(group), val(meta), file("*.agg.pon.vep.panel.vcf"),   emit: vcf_panel
         path "versions.yml",                                            emit: versions
 
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -137,7 +137,7 @@ process MARK_GERMLINES {
     input:
         tuple val(group), val(meta), file(vcf) // from vcf_germline.join(meta_germline.groupTuple())
 
-        
+
     output:
         tuple val(group), val(meta), file("*.agg.pon.vep.markgerm.vcf"),    emit: vcf_germline
         path "versions.yml",                                                emit: versions
@@ -211,7 +211,7 @@ process FILTER_FOR_CNV {
     output:
         tuple val(group), file("*_vardict.germlines.vcf.gz"), file("*_vardict.germlines.vcf.gz.tbi"),   emit: vcf_only_germline
         path "versions.yml",                                                                            emit: versions
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -237,7 +237,7 @@ process FILTER_FOR_CNV {
         def prefix = task.ext.prefix ?: "${group}"
         """
         echo $vcf $vcf_unfilt
-        touch ${prefix}_vardict.germlines.vcf.gz 
+        touch ${prefix}_vardict.germlines.vcf.gz
         touch ${prefix}_vardict.germlines.vcf.gz.tbi
 
         cat <<-END_VERSIONS > versions.yml
@@ -256,7 +256,7 @@ process COYOTE_SEGMENTS {
 
     input:
         tuple val(group), val(meta), file(vcf)
-    
+
     output:
         tuple val(group), val(meta), file("*.cn-segments.panel.bed"),  emit: filtered
         tuple val(group), val(meta), file("*.cn-segments.bed"),        emit: raw
@@ -297,7 +297,7 @@ process COYOTE_SEGMENTS_JSON {
 
     input:
         tuple val(group), val(meta), file(bed)
-    
+
     output:
         tuple val(group), val(meta), file("*panelmatched.json"),  emit: json_panel
         path "versions.yml",                                      emit: versions
@@ -451,7 +451,7 @@ process FILTER_MANTA {
 process GENEFUSE_JSON_TO_VCF {
     label "process_single"
     tag "$group"
-    
+
     input:
         tuple val(group), val(meta), file(json)
 
@@ -548,8 +548,8 @@ process VCFANNO {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf) 
-        
+        tuple val(group), val(meta), file(vcf)
+
     output:
         tuple val(group), val(meta), file("*.agg.enigma.vcf"),  emit: vcf_enigma
         path "versions.yml",                                    emit: versions
@@ -586,7 +586,7 @@ process CREATE_SNVPON {
     tag "$vc"
 
     input:
-        tuple val(group), val(vc), file(vcfs) 
+        tuple val(group), val(vc), file(vcfs)
 
     output:
         tuple val(group), val(vc), file("*_${vc}_PON.snv"), emit: SNV_PON
@@ -638,7 +638,7 @@ process CONTAMINATION {
         def args    = task.ext.args     ?: ''
         def args2   = task.ext.args2    ?: ''
 
-        if(meta.id.size() >= 2) { 
+        if(meta.id.size() >= 2) {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
 
@@ -670,7 +670,7 @@ process CONTAMINATION {
         }
 
     stub:
-        if(meta.id.size() >= 2) { 
+        if(meta.id.size() >= 2) {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             """
@@ -710,7 +710,7 @@ process BEDTOOLS_INTERSECT {
     output:
         tuple val(group), val(vc), file("*_${vc}_intersected.vcf"), emit: vcf_intersected
         path "versions.yml",                                        emit: versions
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -744,7 +744,7 @@ process OVERLAP_GENES {
     tag "${meta.group}"
 
     input:
-		tuple val(group), val(meta), file(segments) 
+		tuple val(group), val(meta), file(segments)
 
     output:
         tuple val(group), val(meta), file("*.cnv.annotated.bed"),       emit : annotated_bed
@@ -760,11 +760,11 @@ process OVERLAP_GENES {
     def prefix = task.ext.prefix ?: "${meta.id[tumor_idx]}"
         """
         overlapping_genes.pl ${segments} ${args} > ${prefix}.cnv.annotated.bed
-        
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-        END_VERSIONS        
+        END_VERSIONS
         """
 
     stub:
@@ -772,13 +772,13 @@ process OVERLAP_GENES {
     def normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N'  }
     def prefix = task.ext.prefix ?: "${meta.id[tumor_idx]}"
         """
-        
+
         touch ${prefix}.cnv.annotated.bed
-        
+
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
-        END_VERSIONS        
+        END_VERSIONS
         """
 }
 
@@ -787,14 +787,14 @@ process FILTER_CNVS_PANEL {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(bed) 
+        tuple val(group), val(meta), file(bed)
 
     output:
         tuple val(group), file("*.cnv.annotated.panel.bed"),             emit: vcf_panel_bed
-        tuple val(group), file("*.cnv.annotated.panel.json"),            emit: vcf_panel_json   
+        tuple val(group), file("*.cnv.annotated.panel.json"),            emit: vcf_panel_json
         path "versions.yml",                                             emit: versions
 
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -825,7 +825,7 @@ process FILTER_CNVS_PANEL {
         "${task.process}":
             perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
-        
+
         """
 }
 
@@ -834,13 +834,13 @@ process FILTER_FUSIONS_PANEL {
     tag "$group"
 
     input:
-        tuple val(group), val(meta), file(vcf) 
+        tuple val(group), val(meta), file(vcf)
 
     output:
         tuple val(group), val(meta), file("*.manta.fusions.vcf"),               emit: sv_panel
         path "versions.yml",                                                    emit: versions
 
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -848,7 +848,7 @@ process FILTER_FUSIONS_PANEL {
     def args   = task.ext.args   ?: ''
     def prefix = task.ext.prefix ?: "${group}"
         """
-        filter_with_panel_fusions.pl ${vcf} ${args} > ${prefix}.manta.fusions.vcf	
+        filter_with_panel_fusions.pl ${vcf} ${args} > ${prefix}.manta.fusions.vcf
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -856,13 +856,13 @@ process FILTER_FUSIONS_PANEL {
         END_VERSIONS
         """
 
-    
+
     stub:
     def args   = task.ext.args   ?: ''
     def prefix = task.ext.prefix ?: "${group}"
         """
         echo $args
-        touch ${prefix}.manta.fusions.vcf	
+        touch ${prefix}.manta.fusions.vcf
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -878,7 +878,7 @@ process FIX_VEP {
     input:
         tuple val(group), val(meta), file(vcf) // from vcf_germline.join(meta_germline.groupTuple())
 
-        
+
     output:
         tuple val(group), val(meta), file("*.agg.pon.vep.fix.vcf"),             emit: fixed_vcf
         path "versions.yml",                                                    emit: versions
@@ -946,7 +946,7 @@ process POST_ANNOTATION_FILTERS {
 
     input:
         tuple val(group), val(meta), file(vcf)
-        
+
     output:
         tuple val(group), val(meta), file("*.final.filtered.vcf"),              emit: filtered_vcf
         path "versions.yml",                                                    emit: versions
@@ -974,6 +974,5 @@ process POST_ANNOTATION_FILTERS {
             python: \$(python --version 2>&1| sed -e 's/Python //g')
         END_VERSIONS
         """
-        
-}
 
+}
