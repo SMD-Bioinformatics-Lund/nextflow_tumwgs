@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+include { NORMALIZE_VCF            } from '../../modules/local/filters/main'
+include { INTERSECT_CODING         } from '../../modules/local/filters/main'
 include { ANNOTATE_VEP             } from '../../modules/local/filters/main'
 include { GERMLINE_EVALUATE        } from '../../modules/local/germline_evaluate/main'
 
@@ -10,7 +12,13 @@ workflow GERMLINE_ANNOTATE {
     main:
         ch_versions = Channel.empty()
 
-        ANNOTATE_VEP { germline_combined_vcf.map{ group, meta, vcf, tbi -> tuple(group, meta, vcf) } }
+        NORMALIZE_VCF { germline_combined_vcf }
+        ch_versions = ch_versions.mix(NORMALIZE_VCF.out.versions)
+
+        INTERSECT_CODING ( NORMALIZE_VCF.out.vcf_norm, params.gene_regions )
+        ch_versions = ch_versions.mix(INTERSECT_CODING.out.versions)
+
+        ANNOTATE_VEP { INTERSECT_CODING.out.vcf_intersected }
         ch_versions = ch_versions.mix(ANNOTATE_VEP.out.versions)
 
         GERMLINE_EVALUATE { ANNOTATE_VEP.out.vcf_vep }

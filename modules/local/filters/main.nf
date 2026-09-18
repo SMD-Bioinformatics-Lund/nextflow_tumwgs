@@ -43,6 +43,91 @@ process PON_FILTER {
         """
 }
 
+process NORMALIZE_VCF {
+
+    label "process_single"
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(vcf), file(tbi)
+
+    output:
+        tuple val(group), val(meta), file("*.norm.vcf.gz"), file("*.norm.vcf.gz.tbi"), emit: vcf_norm
+        path "versions.yml",                                                            emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def args   = task.ext.args   ?: ''
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        bcftools norm $args -O z -o ${prefix}.norm.vcf.gz ${vcf}
+        bcftools index -t ${prefix}.norm.vcf.gz
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
+        """
+
+    stub:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        touch ${prefix}.norm.vcf.gz
+        touch ${prefix}.norm.vcf.gz.tbi
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
+        """
+}
+
+process INTERSECT_CODING {
+
+    label "process_single"
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(vcf), file(tbi)
+        val(bed)
+
+    output:
+        tuple val(group), val(meta), file("*.norm.cds.vcf"), emit: vcf_intersected
+        path "versions.yml",                                 emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def args   = task.ext.args   ?: ''
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        bedtools intersect -a ${vcf} -b ${bed} $args > ${prefix}.norm.cds.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bedtools: \$(bedtools --version | sed -e "s/bedtools v//g")
+        END_VERSIONS
+        """
+
+    stub:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        touch ${prefix}.norm.cds.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bedtools: \$(bedtools --version | sed -e "s/bedtools v//g")
+        END_VERSIONS
+        """
+}
+
 process ANNOTATE_VEP {
 
     label "process_medium"
