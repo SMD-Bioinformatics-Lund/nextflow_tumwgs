@@ -1025,6 +1025,51 @@ process FIX_VEP {
         }
 }
 
+process COMBINE_SOMATIC_GERMLINE {
+    label "process_single"
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(somatic_vcf), file(germline_vcf)
+
+    output:
+        tuple val(group), val(meta), file("*.somatic.germline.vcf"), emit: vcf_combined
+        path "versions.yml",                                          emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def args   = task.ext.args   ?: ''
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        bgzip -c $somatic_vcf > somatic.vcf.gz
+        bcftools index -t somatic.vcf.gz
+        bgzip -c $germline_vcf > germline.vcf.gz
+        bcftools index -t germline.vcf.gz
+
+        bcftools concat -a somatic.vcf.gz germline.vcf.gz | bcftools sort $args -O v -o ${prefix}.somatic.germline.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
+        """
+
+    stub:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        touch ${prefix}.somatic.germline.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+        END_VERSIONS
+        """
+}
+
 process POST_ANNOTATION_FILTERS {
     label "process_single"
     tag "$group"

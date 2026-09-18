@@ -98,20 +98,21 @@ workflow SWGP_COMMON {
     ch_versions = ch_versions.mix(ch_vcf.versions)
 
 
-    SNV_ANNOTATE (
-        ch_vcf.agg_vcf,
-        ch_vcf.concat_vcfs,
-        CHECK_INPUT.out.meta
-    )
-    .set { ch_vcf_anno }
-    ch_versions = ch_versions.mix(ch_vcf_anno.versions)
-
-
     GERMLINE_ANNOTATE (
         ch_vcf.germline_combined_vcf
     )
     .set { ch_germline_anno }
     ch_versions = ch_versions.mix(ch_germline_anno.versions)
+
+
+    SNV_ANNOTATE (
+        ch_vcf.agg_vcf,
+        ch_vcf.concat_vcfs,
+        CHECK_INPUT.out.meta,
+        ch_germline_anno.ranked_vcf
+    )
+    .set { ch_vcf_anno }
+    ch_versions = ch_versions.mix(ch_vcf_anno.versions)
 
 
     CNV_CALLING (
