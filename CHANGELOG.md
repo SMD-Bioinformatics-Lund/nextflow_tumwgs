@@ -1,5 +1,10 @@
 # CHANGELOG
 
+
+## v2.0.8
+
+- Changed the process_medium and process_high resources requirement
+
 ## v2.0.7
  - Changed the default reference genome for CNV calling from unmasked hg38 to hg38 with masked regions. CNV calling now uses the masked hg38 reference by default.
  - Fixed the missing "-wgs" suffix in the GENS load command by appending it to the case/group id ("--case-id"), when needed.
