@@ -7,6 +7,10 @@
  * a variant present in both files is kept once, as the somatic record, with GERMLINE added to
    FILTER and FAIL_NVAF removed (the same rule mark_germlines.pl applies)
  * output is sorted by contig header order (natural chromosome order if not in the header) and position
+
+The germline VCF only holds the flagged variants, so it is kept in memory; the somatic VCF is streamed
+(one scan to check the sort order and find the shared variants, one to merge), so memory does not grow
+with the number of somatic variants. A somatic VCF that is not sorted is sorted in memory instead.
 """
 
 import argparse
@@ -19,22 +23,33 @@ CSQ_FMT_RE = re.compile(r'^##INFO=<ID=CSQ,.*Format: ([^">]+)')
 CONTIG_RE = re.compile(r"^##contig=<ID=([^,>]+)")
 
 
-def read_vcf(fn):
-    opener = gzip.open if fn.endswith(".gz") else open
-    hdr, cols, recs = [], None, []
-    with opener(fn, "rt") as fh:
-        for line in fh:
-            line = line.rstrip("\n")
-            if not line.strip():
-                continue
-            if line.startswith("##"):
-                hdr.append(line)
-            elif line.startswith("#CHROM"):
-                cols = line.split("\t")
-            else:
-                recs.append(line.split("\t"))
+def open_text(fn):
+    return gzip.open(fn, "rt") if fn.endswith(".gz") else open(fn, "rt")
+
+
+def read_header(fh, fn):
+    """Read the ## lines and the #CHROM line, leaving fh at the first record."""
+    hdr, cols = [], None
+    for line in fh:
+        line = line.rstrip("\n")
+        if not line.strip():
+            continue
+        if line.startswith("##"):
+            hdr.append(line)
+        elif line.startswith("#CHROM"):
+            cols = line.split("\t")
+            break
+        else:
+            break
     if cols is None:
         sys.exit(f"No #CHROM line in {fn}")
+    return hdr, cols
+
+
+def read_vcf(fn):
+    with open_text(fn) as fh:
+        hdr, cols = read_header(fh, fn)
+        recs = [line.rstrip("\n").split("\t") for line in fh if line.strip()]
     return hdr, cols, recs
 
 
@@ -101,66 +116,104 @@ def main():
     ap.add_argument("--germline", required=True, help="Germline VCF, records flagged by mark_germlines.pl")
     args = ap.parse_args()
 
-    s_hdr, s_cols, s_recs = read_vcf(args.somatic)
     g_hdr, g_cols, g_recs = read_vcf(args.germline)
+    with open_text(args.somatic) as fh:
+        s_hdr, s_cols = read_header(fh, args.somatic)
 
-    # ---- sample alignment ----
-    s_samples = s_cols[9:]
-    g_pos = {name: i for i, name in enumerate(g_cols) if i >= 9}
-    for s in s_samples:
-        if s not in g_pos:
-            sys.exit(f"Sample {s} is in the somatic VCF but not in the germline VCF")
-    if len(s_samples) != len(g_pos):
-        sys.exit("Different number of samples in the somatic and germline VCF")
-    g_order = list(range(9)) + [g_pos[s] for s in s_samples]
+        # ---- sample alignment ----
+        s_samples = s_cols[9:]
+        g_pos = {name: i for i, name in enumerate(g_cols) if i >= 9}
+        for s in s_samples:
+            if s not in g_pos:
+                sys.exit(f"Sample {s} is in the somatic VCF but not in the germline VCF")
+        if len(s_samples) != len(g_pos):
+            sys.exit("Different number of samples in the somatic and germline VCF")
+        g_order = list(range(9)) + [g_pos[s] for s in s_samples]
+        g_recs = [[g[i] for i in g_order] for g in g_recs]
 
-    # ---- header ----
-    out_hdr = list(s_hdr)
-    seen = {k for k in map(hdr_key, s_hdr) if k}
-    for line in g_hdr:
-        k = hdr_key(line)
-        if k and k not in seen:
-            out_hdr.append(line)
-            seen.add(k)
+        # ---- header ----
+        out_hdr = list(s_hdr)
+        seen = {k for k in map(hdr_key, s_hdr) if k}
+        for line in g_hdr:
+            k = hdr_key(line)
+            if k and k not in seen:
+                out_hdr.append(line)
+                seen.add(k)
 
-    # ---- CSQ layout ----
-    s_fmt, g_fmt = csq_format(s_hdr), csq_format(g_hdr)
-    csq_map = build_csq_map(s_fmt, g_fmt) if s_fmt and g_fmt and s_fmt != g_fmt else []
+        # ---- CSQ layout ----
+        s_fmt, g_fmt = csq_format(s_hdr), csq_format(g_hdr)
+        csq_map = build_csq_map(s_fmt, g_fmt) if s_fmt and g_fmt and s_fmt != g_fmt else []
 
-    # ---- merge ----
-    s_index = {(r[0], r[1], r[3], r[4]): i for i, r in enumerate(s_recs)}
-    all_recs = list(s_recs)
-    n_dup = n_new = 0
-    for g in g_recs:
-        rec = [g[i] for i in g_order]
-        key = (rec[0], rec[1], rec[3], rec[4])
-        if key in s_index:
-            s = all_recs[s_index[key]]
-            flt = [f for f in s[6].split(";") if f not in ("GERMLINE", "FAIL_NVAF", ".")]
-            s[6] = ";".join(["GERMLINE"] + flt)
-            n_dup += 1
-        else:
-            if csq_map:
-                rec[7] = remap_csq(rec[7], csq_map)
-            all_recs.append(rec)
-            n_new += 1
-    print(f"combine_vcfs: {n_new} germline records added, {n_dup} already present in the somatic VCF", file=sys.stderr)
+        # ---- sort key: contig header order, else natural chromosome order; then position ----
+        contig_rank = {m.group(1): i for i, m in enumerate(filter(None, map(CONTIG_RE.match, s_hdr)))}
+        ck_cache = {}
 
-    # ---- sort ----
-    contigs = [m.group(1) for m in map(CONTIG_RE.match, s_hdr) if m]
-    contig_rank = {c: i for i, c in enumerate(contigs)}
+        def sort_key(chrom, pos):
+            ck = ck_cache.get(chrom)
+            if ck is None:
+                ck = ck_cache[chrom] = (0, contig_rank[chrom], "") if chrom in contig_rank else chrom_key(chrom)
+            return (ck, int(pos))
 
-    def sort_key(item):
-        i, r = item
-        ck = (0, contig_rank[r[0]], "") if r[0] in contig_rank else chrom_key(r[0])
-        return (ck, int(r[1]), i)
+        # ---- pass 1: is the somatic VCF sorted, and which germline variants does it already hold? ----
+        g_keys = {(g[0], g[1], g[3], g[4]) for g in g_recs}
+        g_sites = {(k[0], k[1]) for k in g_keys}
+        present, is_sorted, prev = set(), True, None
+        for line in fh:
+            if not line.strip():
+                continue
+            f = line.split("\t", 5)
+            sk = sort_key(f[0], f[1])
+            if prev is not None and sk < prev:
+                is_sorted = False
+            prev = sk
+            if (f[0], f[1]) in g_sites:
+                key = (f[0], f[1], f[3], f[4])
+                if key in g_keys:
+                    present.add(key)
 
+    n_dup = sum(1 for g in g_recs if (g[0], g[1], g[3], g[4]) in present)
+    new_germ = [g for g in g_recs if (g[0], g[1], g[3], g[4]) not in present]
+    if csq_map:
+        for g in new_germ:
+            g[7] = remap_csq(g[7], csq_map)
+    new_germ = sorted(((sort_key(g[0], g[1]), i, g) for i, g in enumerate(new_germ)), key=lambda t: t[:2])
+    print(f"combine_vcfs: {len(new_germ)} germline records added, {n_dup} already present in the somatic VCF", file=sys.stderr)
+
+    def add_germline_flag(line):
+        r = line.rstrip("\n").split("\t")
+        if (r[0], r[1], r[3], r[4]) not in present:
+            return line
+        flt = [f for f in r[6].split(";") if f not in ("GERMLINE", "FAIL_NVAF", ".")]
+        r[6] = ";".join(["GERMLINE"] + flt)
+        return "\t".join(r) + "\n"
+
+    # ---- pass 2: merge the sorted germline records into the somatic stream ----
     out = sys.stdout
     for line in out_hdr:
         out.write(line + "\n")
     out.write("\t".join(s_cols) + "\n")
-    for _, r in sorted(enumerate(all_recs), key=sort_key):
-        out.write("\t".join(r) + "\n")
+
+    with open_text(args.somatic) as fh:
+        read_header(fh, args.somatic)
+        recs = (line if line.endswith("\n") else line + "\n" for line in fh if line.strip())
+        if is_sorted:
+            stream = ((sort_key(*l.split("\t", 2)[:2]), l) for l in recs)
+        else:
+            print("combine_vcfs: somatic VCF is not sorted, sorting in memory", file=sys.stderr)
+            keyed = [(sort_key(*l.split("\t", 2)[:2]), i, l) for i, l in enumerate(recs)]
+            keyed.sort(key=lambda t: t[:2])
+            stream = ((k, l) for k, _, l in keyed)
+
+        gi = 0
+        for sk, line in stream:
+            # germline-only records go before a somatic record only when strictly earlier, so
+            # somatic records stay ahead of germline records at the same position
+            while gi < len(new_germ) and new_germ[gi][0] < sk:
+                out.write("\t".join(new_germ[gi][2]) + "\n")
+                gi += 1
+            out.write(add_germline_flag(line) if present else line)
+        for _, _, g in new_germ[gi:]:
+            out.write("\t".join(g) + "\n")
 
 
 if __name__ == "__main__":
