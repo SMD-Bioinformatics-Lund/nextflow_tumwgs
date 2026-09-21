@@ -86,6 +86,44 @@ process NORMALIZE_VCF {
         """
 }
 
+process PANEL_EXON_BED {
+
+    label "process_single"
+    tag "$assay"
+
+    input:
+        path(assay)
+        path(genes_bed)
+        path(exons_bed)
+
+    output:
+        path "panel_exons.bed", emit: bed
+        path "versions.yml",    emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        """
+        assay_gene_bed.py --assay ${assay} --genes_bed ${genes_bed} --exons_bed ${exons_bed} > panel_exons.bed
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$( python3 --version 2>&1 | sed 's/Python //' )
+        END_VERSIONS
+        """
+
+    stub:
+        """
+        touch panel_exons.bed
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            python: \$( python3 --version 2>&1 | sed 's/Python //' )
+        END_VERSIONS
+        """
+}
+
 process INTERSECT_CODING {
 
     label "process_single"
@@ -93,7 +131,7 @@ process INTERSECT_CODING {
 
     input:
         tuple val(group), val(meta), file(vcf), file(tbi)
-        val(bed)
+        path(bed)
 
     output:
         tuple val(group), val(meta), file("*.norm.cds.vcf"), emit: vcf_intersected

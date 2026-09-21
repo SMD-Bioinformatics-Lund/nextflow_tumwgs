@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 
 include { NORMALIZE_VCF            } from '../../modules/local/filters/main'
+include { PANEL_EXON_BED           } from '../../modules/local/filters/main'
 include { INTERSECT_CODING         } from '../../modules/local/filters/main'
 include { FORMAT_GERMLINE_VCF      } from '../../modules/local/filters/main'
 include { ANNOTATE_VEP             } from '../../modules/local/filters/main'
@@ -17,7 +18,11 @@ workflow GERMLINE_ANNOTATE {
         NORMALIZE_VCF { germline_combined_vcf }
         ch_versions = ch_versions.mix(NORMALIZE_VCF.out.versions)
 
-        INTERSECT_CODING ( NORMALIZE_VCF.out.vcf_norm, params.gene_regions )
+        // only the exons of the assay genes are annotated, everything else is dropped by MARK_GERMLINES anyway
+        PANEL_EXON_BED ( file(params.markgermline), file(params.gencode_genes), file(params.gene_regions) )
+        ch_versions = ch_versions.mix(PANEL_EXON_BED.out.versions)
+
+        INTERSECT_CODING ( NORMALIZE_VCF.out.vcf_norm, PANEL_EXON_BED.out.bed )
         ch_versions = ch_versions.mix(INTERSECT_CODING.out.versions)
 
         // DNAscope GT:AD:DP:GQ:PL -> GT:VAF:VD:DP, the format mark_germlines.pl expects
