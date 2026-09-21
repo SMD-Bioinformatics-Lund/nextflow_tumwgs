@@ -34,7 +34,12 @@ workflow BAM_QC {
 
         VERIFYBAMID2 (bam_dedup)
         ch_versions = ch_versions.mix(VERIFYBAMID2.out.versions)
-        ch_qc_json  = ch_qc_json.join(VERIFYBAMID2.out.contamination_json, by:[0,1])
+        // contamination is optional (params.verifybamid = false, or VERIFYBAMID2 ignored on error):
+        // remainder keeps samples without it, MERGE_QC_JSON then merges the alignment QC alone
+        ch_qc_json  = ch_qc_json
+            .join(VERIFYBAMID2.out.contamination_json, by:[0,1], remainder: true)
+            .filter { group, meta, qc, contamination -> qc }
+            .map    { group, meta, qc, contamination -> tuple(group, meta, qc, contamination ?: []) }
 
         //ch_qc_json.view()
 

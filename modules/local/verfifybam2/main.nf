@@ -11,6 +11,9 @@ process VERIFYBAMID2 {
         tuple val(group), file("*.result.Ancestry"), file("*.result.selfSM"), emit: results
         path "versions.yml",                                                  emit: versions
 
+    when:
+        task.ext.when == null || task.ext.when
+
     script:
         def args    = task.ext.args     ?: ""   // reference 
         def args2   = task.ext.args2    ?: ""   // loci to check
