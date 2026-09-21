@@ -1123,11 +1123,11 @@ process COMBINE_SOMATIC_GERMLINE {
         def prefix = task.ext.prefix ?: "${group}"
 
         """
-        combine_vcfs.pl --somatic $somatic_vcf --germline $germline_vcf > ${prefix}.somatic.germline.vcf
+        combine_vcfs.py --somatic $somatic_vcf --germline $germline_vcf > ${prefix}.somatic.germline.vcf
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
-            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            python: \$( python3 --version 2>&1 | sed 's/Python //' )
         END_VERSIONS
         """
 
@@ -1139,7 +1139,7 @@ process COMBINE_SOMATIC_GERMLINE {
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
-            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+            python: \$( python3 --version 2>&1 | sed 's/Python //' )
         END_VERSIONS
         """
 }
