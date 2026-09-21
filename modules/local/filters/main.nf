@@ -128,6 +128,86 @@ process INTERSECT_CODING {
         """
 }
 
+process FORMAT_GERMLINE_VCF {
+
+    label "process_single"
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(vcf)
+
+    output:
+        tuple val(group), val(meta), file("*.germline.agg.vcf"), emit: vcf_agg
+        path "versions.yml",                                     emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        aggregate_vcf.pl --vcfs ${vcf} > ${prefix}.germline.agg.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+        END_VERSIONS
+        """
+
+    stub:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        touch ${prefix}.germline.agg.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
+        END_VERSIONS
+        """
+}
+
+process SELECT_GERMLINE {
+
+    label "process_single"
+    tag "$group"
+
+    input:
+        tuple val(group), val(meta), file(vcf)
+
+    output:
+        tuple val(group), val(meta), file("*.germline.marked.vcf"), emit: vcf_germline
+        path "versions.yml",                                        emit: versions
+
+    when:
+        task.ext.when == null || task.ext.when
+
+    script:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        awk -F"\\t" '/^#/ || \$7 ~ /(^|;)GERMLINE(;|\$)/' ${vcf} > ${prefix}.germline.marked.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            awk: \$( (awk --version 2>/dev/null || awk -W version 2>/dev/null) | head -1 | sed 's/,.*//' )
+        END_VERSIONS
+        """
+
+    stub:
+        def prefix = task.ext.prefix ?: "${group}"
+
+        """
+        touch ${prefix}.germline.marked.vcf
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            awk: \$( (awk --version 2>/dev/null || awk -W version 2>/dev/null) | head -1 | sed 's/,.*//' )
+        END_VERSIONS
+        """
+}
+
 process ANNOTATE_VEP {
 
     label "process_medium"
@@ -1040,20 +1120,14 @@ process COMBINE_SOMATIC_GERMLINE {
         task.ext.when == null || task.ext.when
 
     script:
-        def args   = task.ext.args   ?: ''
         def prefix = task.ext.prefix ?: "${group}"
 
         """
-        bgzip -c $somatic_vcf > somatic.vcf.gz
-        bcftools index -t somatic.vcf.gz
-        bgzip -c $germline_vcf > germline.vcf.gz
-        bcftools index -t germline.vcf.gz
-
-        bcftools concat -a somatic.vcf.gz germline.vcf.gz | bcftools sort $args -O v -o ${prefix}.somatic.germline.vcf
+        combine_vcfs.pl --somatic $somatic_vcf --germline $germline_vcf > ${prefix}.somatic.germline.vcf
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
-            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
         """
 
@@ -1065,7 +1139,7 @@ process COMBINE_SOMATIC_GERMLINE {
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
-            bcftools: \$(echo \$(bcftools --version 2>&1) | sed 's/bcftools //; s/ .*//')
+            perl: \$( echo \$(perl -v 2>&1) |sed 's/.*(v//; s/).*//')
         END_VERSIONS
         """
 }

@@ -56,7 +56,7 @@ while ( my $var = $vcf->next_var() ) {
     my $germline = 0;
     my $germline_risk = 0;
     my $not_germline = 0;
-    
+
     # check whether it seems like a germline variant depending on VAF of variant
     for my $gt ( @{$var->{GT}}) {
         # If normal samples. Set GERMLINE filter if VAF > $MIN_VAF_NORMAL and in relevant gene
@@ -64,7 +64,7 @@ while ( my $var = $vcf->next_var() ) {
             $germline = 1 if( $gt->{VAF} > $MIN_VAF_NORMAL and $gt->{DP} > $MIN_DP and $in_relevant_gene);
             $not_germline = 1 if $gt->{VAF} < $MAX_VAF_NORMAL and $gt->{DP} > $MIN_DP;
         }
-        
+
         # If tumor samples. Set GERMLINE_RISK filter if VAF > $MIN_VAF_TUMOR
         if( $tid and $gt->{_sample_id} eq $tid ) {
             $germline_risk = 1 if( $gt->{VAF} > $MIN_VAF_TUMOR and $gt->{DP} > $MIN_DP );
@@ -80,11 +80,11 @@ while ( my $var = $vcf->next_var() ) {
     if ( $germline ) {
         my @new_filters = ("GERMLINE");
         foreach( split(';', $var->{FILTER}) ) {
-            push @new_filters, $_ unless $_ eq "FAIL_NVAF"; 
+            push @new_filters, $_ unless $_ eq "FAIL_NVAF";
         }
         $var->{FILTER} = join(";", @new_filters);
     }
-    
+
 
     # Add GERMLINE_RISK filter to suspected germline variants in tumor only
     elsif ( $germline_risk and !$nid ) {
@@ -104,7 +104,7 @@ sub print_header {
     print "##FILTER=<ID=GERMLINE,Description=\"Germline variant, detected in normal sample\">\n";
     print "##FILTER=<ID=GERMLINE_RISK,Description=\"Potential germline variant, from tumor sample\">\n";
     system("zgrep ^#CHROM $file");
-        
+
 }
 
 
@@ -127,11 +127,21 @@ sub mini_rank {
 
     ## check clinvar ##
     # if only one annotation handle differently, this is to support sole Benign annotations
-    # otherwise find highest score acoring to rank->clinvar from JSON. 
+    # otherwise find highest score acoring to rank->clinvar from JSON.
     # This let's the user define some value and let other be 0. This is ugly?
     my $clinvar = 0;
-    if ($var->{INFO}->{CLNSIG} && $rank{"clinvar"}) {
-        my @clinsig = split("/",$var->{INFO}->{CLNSIG});
+    # ClinVar comes either as a top-level INFO/CLNSIG or, when added through VEP --custom, as CSQ CLINVAR_CLNSIG
+    my $clnsig_str = $var->{INFO}->{CLNSIG};
+    if (!$clnsig_str) {
+        for my $tx ( @{ $var->{INFO}->{CSQ} } ) {
+            if ($tx->{CLINVAR_CLNSIG}) {
+                $clnsig_str = $tx->{CLINVAR_CLNSIG};
+                last;
+            }
+        }
+    }
+    if ($clnsig_str && $rank{"clinvar"}) {
+        my @clinsig = split(/[\/&|,]/,$clnsig_str);
         if (scalar(@clinsig) == 1) {
             if ($rank{"clinvar"}{$clinsig[0]}) {
                 $clinvar = $rank{"clinvar"}{$clinsig[0]};
@@ -142,7 +152,7 @@ sub mini_rank {
                 if ($rank{"clinvar"}{$match}) {
                     if ($rank{"clinvar"}{$match} > $clinvar) {
                         $clinvar = $rank{"clinvar"}{$match};
-                    }                    
+                    }
                 }
             }
         }
@@ -214,7 +224,7 @@ sub check_options {
 
 sub help_text {
     my $error = shift;
-    
+
     print "\n\$ mark_germlines.pl --vcf INPUT_VCF --tumor-id [--normal-id}\n\n";
     print "   --vcf        Input vcf\n";
     print "   --normal-id  Normal sample ID\n";
@@ -234,16 +244,20 @@ sub vcfstr {
 
     # Generate and print INFO field
     for my $info_key (@{$v->{INFO_order}}) {
-    my $key2 = $info_key;
-    $key2 = "_CSQ_str" if $info_key eq "CSQ";
-    push @all_info, $info_key."=".$v->{INFO}->{$key2};
+    if( $info_key eq "CSQ" ) {
+        # CSQ is parsed into an array by vcf2.pm, print the original string instead
+        push @all_info, "CSQ=".( defined $v->{_csqstr} ? $v->{_csqstr} : ( $v->{INFO}->{_CSQ_str} // "" ) );
+        next;
+    }
+    my $val = $v->{INFO}->{$info_key};
+    push @all_info, $info_key."=".( defined $val ? $val : "" );
     }
     print join(";", @all_info)."\t";
 
     # Print FORMAT field
     print join(":", @{$v->{FORMAT}});
 
-    
+
     # Print GT fields for all samples
     for my $gt (@{$v->{GT}}) {
     my @all_gt;

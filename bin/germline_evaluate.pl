@@ -28,6 +28,7 @@ foreach my $gene ( @{ $assay_json{genes} } ) {
 my $vcf = vcf2->new( 'file' => $opt{vcf} );
 my $tid = $opt{'tumor-id'};
 
+
 print_header( $opt{vcf} );
 
 while ( my $var = $vcf->next_var() ) {
@@ -48,6 +49,7 @@ while ( my $var = $vcf->next_var() ) {
     my $score = 0;
     if ( $assay_json{inclusion_score} ) {
         $score = mini_rank( $var, \%assay_json );
+
         next unless $score >= $assay_json{inclusion_score};
     }
 
@@ -77,7 +79,7 @@ sub mini_rank {
     if ( $rank{"clinvar"} ) {
         for my $tx ( @{ $var->{INFO}->{CSQ} } ) {
             next unless $tx->{CLINVAR_CLNSIG};
-            foreach my $match ( split( /[&|]/, $tx->{CLINVAR_CLNSIG} ) ) {
+            foreach my $match ( split( /[&|\/,]/, $tx->{CLINVAR_CLNSIG} ) ) {
                 if ( $rank{"clinvar"}{$match} and $rank{"clinvar"}{$match} > $clinvar ) {
                     $clinvar = $rank{"clinvar"}{$match};
                 }
@@ -96,9 +98,10 @@ sub mini_rank {
             my $tx_score = conseqeunce( $tx->{Consequence}, \%rank );
             $max_score = $tx_score if $tx_score > $max_score;
         }
-        if ( $tx->{gnomADg} && $rank{"gnomad_cutoff"} ) {
-            my @afs = split( /[&,]/, ( $tx->{gnomADg_AF} // '' ) );
-            if ( $afs[0] ne '' and $afs[0] < $rank{"gnomad_cutoff"} ) {
+        if ( $rank{"gnomad_cutoff"} and defined $tx->{gnomADg_AF} and $tx->{gnomADg_AF} ne '' ) {
+            # several gnomAD records can match one allele ("0.0&0.49"); judge by the most common one
+            my ($max_af) = sort { $b <=> $a } grep { $_ ne '' } split( /[&,]/, $tx->{gnomADg_AF} );
+            if ( defined $max_af and $max_af < $rank{"gnomad_cutoff"} ) {
                 $gnomad = 1;
             }
         }

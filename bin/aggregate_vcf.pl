@@ -15,7 +15,7 @@ use Data::Dumper;
 #  * Add pindel support
 
 my @supported_callers =
-  ( 'freebayes', 'mutect2', 'tnscope', 'vardict', 'pindel' );
+  ( 'freebayes', 'mutect2', 'tnscope', 'dnascope', 'vardict', 'pindel' );
 
 # Get command line options
 my %opt = ();
@@ -161,7 +161,7 @@ sub fix_gt {
 
     $var->{FORMAT} = [];
 
-    if ( $vc =~ /^(mutect2|tnscope|vardict|pindel)$/ ) {
+    if ( $vc =~ /^(mutect2|tnscope|dnascope|vardict|pindel)$/ ) {
         for my $gt ( @{ $var->{GT} } ) {
             my ( $ref_dp, $alt_dp, $af ) = ( 0, 0, 0 );
             if ( $gt->{AD} ) {
@@ -349,6 +349,11 @@ sub which_variantcaller {
     }
     if ( $meta->{'SentieonCommandLine.TNscope'} ) {
         return "tnscope";
+    }
+    if (   $meta->{'SentieonCommandLine.DNAscope'}
+        or $meta->{'SentieonCommandLine.GVCFtyper'} )
+    {
+        return "dnascope";
     }
     if ( $meta->{INFO}->{MSILEN} )
     {    # FIXME: Terrible way of detecting vardict VCFs...
