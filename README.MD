@@ -17,6 +17,8 @@ A corresponding Nextflow profile (hopper) is available in the configuration file
 
 The elaborate technical documentation on the bioinformatics softwares used are described in the [documenation](./doc).
 
+Known issues and open findings are tracked in [Issue.md](./Issue.md).
+
 ### Running the Pipeline Manually
 
 #### 1. Hematology Pipeline
