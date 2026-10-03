@@ -11,7 +11,7 @@ use Data::Dumper;
 my $MAX_VAF_NORMAL = 0.05;
 my $MIN_VAF_NORMAL = 0.35;
 my $MIN_VAF_TUMOR  = 0.45;
-my $MIN_DP = 100;
+my $MIN_DP = 25;
 
 # Get command line options
 my %opt = ();
