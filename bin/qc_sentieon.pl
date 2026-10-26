@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
+use warnings;
 use strict;
 use Data::Dumper;
 use JSON;# qw( encode_json );
+use Getopt::Long;
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # General QC-script for sentieon-data. Takes two arguments: SAMPLE-ID, TYPE(panel or wgs)
@@ -26,8 +28,47 @@ use JSON;# qw( encode_json );
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-my $SID = $ARGV[0];
-my $type = $ARGV[1];
+my $SID;
+my $type;
+
+my $align_metrics_file;
+my $insert_file;
+my $dedup_metrics_file;
+my $metrics_file;
+my $gcsummary_file;
+my $coverage_file_summary;
+my $coverage_file;
+
+GetOptions(
+    "SID=s"                   => \$SID,
+    "type=s"                  => \$type,
+    "align_metrics_file=s"    => \$align_metrics_file,
+    "insert_file=s"           => \$insert_file,
+    "dedup_metrics_file=s"    => \$dedup_metrics_file,
+    "metrics_file=s"          => \$metrics_file,
+    "gcsummary_file=s"        => \$gcsummary_file,
+    "coverage_file_summary=s" => \$coverage_file_summary,
+    "coverage_file=s"         => \$coverage_file
+);
+
+unless ($SID && $type && $align_metrics_file && $insert_file && $dedup_metrics_file && $metrics_file && $gcsummary_file) {
+    die "Usage: $0 --SID <sample_id> --type <panel|wgs> --align_metrics_file <file> --insert_file <file> --dedup_metrics_file <file> --metrics_file <file> --gcsummary_file <file> [--coverage_file file] [--coverage_file_summary file]\n"
+}
+
+unless ($type eq "panel" || $type eq "wgs") { die "--type must be 'panel' or 'wgs'" }
+unless (-f $align_metrics_file) { die "--align_metrics_file does not point to a file" }
+unless (-f $insert_file)        { die "--insert_file does not point to a file" }
+unless (-f $dedup_metrics_file) { die "--dedup_metrics_file does not point to a file" }
+unless (-f $metrics_file)       { die "--metrics_file does not point to a file" }
+unless (-f $gcsummary_file)     { die "--gcsummary_file does not point to a file" }
+
+if ($type eq "panel") {
+    unless ($coverage_file && $coverage_file_summary) {
+        die "If running a panel, --coverage_file and --coverage_file_summary must be provided"
+    }
+    unless (-f $coverage_file) { die "--coverage_file_summary does not point to a file" }
+    unless (-f $coverage_file_summary) { die "--coverage_file_summary does not point to a file" }
+}
 
 my %pct_above_x;
 my $median;
@@ -38,17 +79,13 @@ if ($type eq "panel") {
     %pct_above_x = %$pct_above_panel;
 }
 
-
-my $align_metrics_file = "aln_metrics.txt";
-my $insert_file = "is_metrics.txt";
-my $dedup_metrics_file = "dedup_metrics.txt";
-
 my %results;
-my $metrics_file;
+
 if ($type eq "wgs") {
-    $metrics_file = "wgs_metrics.txt";
+    my ( $sum, %quartiles, $pct25_obs, $pct50_obs, $pct75_obs );
     open( HS, $metrics_file );
     while( <HS> ) {
+  
         if( /^\#SentieonCommandLine/ ) {
 	    <HS>;
             my $vals = <HS>;
@@ -56,6 +93,9 @@ if ($type eq "wgs") {
             $results{'median_cov'} = $a[3];
             $results{'sd_coverage'} = $a[2];
             $results{'mean_coverage'} = $a[1];
+            $pct25_obs = ( $a[0] + 1 ) / 4; # get observations from different quartiles
+            $pct50_obs = ( $a[0] + 1 ) / 2; # get observations from different quartiles
+            $pct75_obs = ( ( $a[0] + 1 ) * 3 ) / 4; # get observations from different quartiles
             $pct_above_x{'1'} = $a[12];
             $pct_above_x{'5'} = $a[13];
             $pct_above_x{'10'} = $a[14];
@@ -71,13 +111,43 @@ if ($type eq "wgs") {
             $pct_above_x{'90'} = $a[24];
             $pct_above_x{'100'} = $a[25];
 
-	    }
+	}elsif( /^(\d+)\s+(\d+)/ ){
+            $sum += $2;
+            if( $sum >= $pct25_obs and not defined $quartiles{ 'R_25' } ){
+                $quartiles{ 'R_25' } = $1;
+            }
+            if( $sum >= $pct50_obs and not defined $quartiles{ 'R_50' } ){
+                $quartiles{ 'R_50' } = $1;
+            }
+            if( $sum >= $pct75_obs and not defined $quartiles{ 'R_75' } ){
+                $quartiles{ 'R_75' } = $1;
+            }
+        }
     }
     close HS;
+    $results{'iqr'} = ( $quartiles{ 'R_75' } - $quartiles{ 'R_25' } );
+    if ( defined $quartiles{ 'R_25' } && defined $quartiles{ 'R_75' }
+         && defined $results{'median_cov'} ) {
+        my $median_cov = sprintf '%s', $results{'median_cov'};
+        if ( $median_cov > 0 ) {
+            $results{'coverage_uniformity'} = $results{'iqr'} / $median_cov;
+        }
+    }
+
+    open( GC, $gcsummary_file );
+    while( <GC> ) {
+        if( /^\#SentieonCommandLine/ ) {
+	    <GC>;
+            my $vals = <GC>;
+            my @a = split /\t/, $vals;
+            $results{'at_drop'} = $a[5];
+            $results{'gc_drop'} = $a[6];
+        }
+    }
+    close GC;
 
 }
 elsif ($type eq "panel") {
-    $metrics_file = "hs_metrics.txt";
     open( HS, $metrics_file );
     while( <HS> ) {
         if( /^\#SentieonCommandLine/ ) {
@@ -92,6 +162,8 @@ elsif ($type eq "panel") {
             #print "median_coverage: $a[22]\n";
             $results{'fold_80'} = $a[32];
             #print "fold_80: $a[32]\n";
+            $results{'at_drop'} = $a[48];
+            $results{'gc_drop'} = $a[49];
 	    }
     }
     close HS;
@@ -139,32 +211,39 @@ while( <DEDUP> ) {
 }
 close DEDUP;
 
+## ALIGMENTMETRICS ##
+
+open( ALIGN, $align_metrics_file );
+while( <ALIGN> ) {
+    if( /^\#SentieonCommandLine/ ) {
+	    <ALIGN>;
+	    my $vals = <ALIGN>;
+	    my @a = split /\t/, $vals;
+	    $results{'pf_mismatch_rate'} = $a[12];
+	    $results{'pf_error_rate'} = $a[13];
+	}
+}
+close ALIGN;
+
 sub coverage_calc {
 
-    my $coverage_file_summary = "cov_metrics.txt.sample_summary";
-    my $coverage_file = "cov_metrics.txt";
     my @cov;
     open( COV, $coverage_file );
     while( <COV> ) {
-
-        unless( /^Locus/ ) {
-            my $vals = <COV>;
-            my @a = split /\t/, $vals;
-            push @cov,$a[1];
-        }
-        
+        next if /^Locus/;
+        my @a = split /\t/;
+        push @cov, $a[1];
     }
-    my @sorted_cov = sort @cov;
+    close COV;
+    my @sorted_cov = sort { $a <=> $b } @cov;
 
-    my $len_cov = scalar(@cov);
+    my $len_cov = scalar(@sorted_cov);
     my $median;
-    if (($len_cov / 2) =~ /\d+\.\d+/) { 
-        my $median_index = ($len_cov / 2) + 0.5;
-        $median = $sorted_cov[$median_index-1];
+    if ($len_cov % 2) {
+        $median = $sorted_cov[ int($len_cov/2) ];
     }
     else {
-        my $median_index = ($len_cov / 2);
-        $median = ($sorted_cov[$median_index-1] + $sorted_cov[$median_index-1]) / 2;
+        $median = ( $sorted_cov[$len_cov/2 - 1] + $sorted_cov[$len_cov/2] ) / 2;
     }
 
 

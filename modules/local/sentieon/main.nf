@@ -409,7 +409,6 @@ process MARKDUP {
         def args    = task.ext.args     ?: ""
         def args2   = task.ext.args2    ?: ""
         def args3   = task.ext.args3    ?: ""
-        def prefix  = task.ext.prefix   ?: ""
 
         out_cram = meta.id+"."+meta.type+".sort.dedup.cram"
 
@@ -421,7 +420,7 @@ process MARKDUP {
         }
         """
         sentieon driver $args3 -t ${task.cpus} -i $cram --algo LocusCollector $args
-        sentieon driver $args3 -t ${task.cpus} -i $cram --algo Dedup $args2 --metrics ${prefix}dedup_metrics.txt $out_cram
+        sentieon driver $args3 -t ${task.cpus} -i $cram --algo Dedup $args2 --metrics ${out_cram}.dedup_metrics.txt $out_cram
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -432,7 +431,7 @@ process MARKDUP {
     stub:
         def args    = task.ext.args     ?: ""
         def args2   = task.ext.args2    ?: ""
-        def prefix  = task.ext.prefix   ?: ""
+        def args3   = task.ext.args3    ?: ""
 
         out_cram = meta.id+"."+meta.type+".dedup.cram"
 
@@ -442,7 +441,7 @@ process MARKDUP {
             out_cram = meta.id+"."+meta.type+"."+submbp+".dedup.cram"
         }
         """
-        touch ${out_cram}  ${out_cram}.crai ${out_cram}.bai ${prefix}dedup_metrics.txt
+        touch ${out_cram}  ${out_cram}.crai ${out_cram}.bai ${out_cram}.dedup_metrics.txt
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -514,7 +513,8 @@ process SENTIEON_QC {
                 path("gc_metrics.txt"),
                 path("aln_metrics.txt"),
                 path("is_metrics.txt"),
-                path("wgs_metrics.txt"),                                                            emit: qc
+                path("wgs_metrics.txt"),
+                path("dedup_metrics.txt"),                                                          emit: qc
         tuple val(group), val(meta), file(cram), file(crai), file(bai), file("*_is_metrics.txt"),   emit: dedup_cram_is_metrices
         path "versions.yml",                                                                        emit: versions
 
@@ -533,6 +533,7 @@ process SENTIEON_QC {
             --algo WgsMetricsAlgo wgs_metrics.txt
 
         cp is_metrics.txt ${prefix}_is_metrics.txt
+        cp ${dedup} dedup_metrics.txt
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -552,6 +553,7 @@ process SENTIEON_QC {
         touch wgs_metrics.txt
         touch ${prefix}_${meta.type}.QC
         touch ${prefix}_is_metrics.txt
+        cp ${dedup} dedup_metrics.txt
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -565,7 +567,7 @@ process COLLECT_QC {
     tag "${meta.id}"
 
     input:
-        tuple val(group), val(meta), path(mq), path(qd), path(gc), path(gc_metrices), path(aln), path(is), path(wgs)
+        tuple val(group), val(meta), path(mq), path(qd), path(gc), path(gc_metrices), path(aln), path(is), path(wgs), path (dedup)
 
     output:
         tuple val(group), val(meta), file("*_${meta.type}.aln.QC"),                    emit: alignment_qc
@@ -577,7 +579,7 @@ process COLLECT_QC {
     script:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
-        qc_sentieon.pl ${meta.id}_${meta.type} wgs > ${prefix}_${meta.type}.aln.QC
+        qc_sentieon.pl --SID  ${meta.id}_${meta.type} --type wgs  --align_metrics_file ${aln} --insert_file ${is} --dedup_metrics_file ${dedup} --metrics_file  --gcsummary_file > ${prefix}_${meta.type}.aln.QC
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
