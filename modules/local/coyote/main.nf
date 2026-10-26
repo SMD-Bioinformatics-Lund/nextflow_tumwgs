@@ -98,7 +98,7 @@ process COYOTE_YAML {
         environment = params.dev ? 'development' : params.validation ? 'validation' : params.testing ? 'testing' : 'production'
         process_group = group
         tumor_idx = 0
-                tumor_sample = meta.id[tumor_idx]
+        tumor_sample = meta.id[tumor_idx]
         tumor_reads = meta.reads[tumor_idx] ?: null
         tumor_ffpe = meta.ffpe[tumor_idx] ? true : false
         tumor_sequencing_run = meta.sequencing_run[tumor_idx] ?: null

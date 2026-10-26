@@ -13,16 +13,20 @@ process QC_TO_CDM {
 
     script:
         def prefix = task.ext.prefix ?: "${meta.id}"
+        tumor_idx = 0
+        tumor_sample = meta.id[tumor_idx]
 
         """
-        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
+        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --subassay ${meta.diagnosis[tumor_idx]} --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
         """
 
     stub:
         def prefix = task.ext.prefix ?: "${meta.id}"
-        
+        tumor_idx = 0
+        tumor_sample = meta.id[tumor_idx]
+
         """
-        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
+        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --subassay ${meta.diagnosis[tumor_idx]} --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
         """
 }
 
@@ -77,7 +81,7 @@ process QC_VALUES {
 
     output:
         tuple val(group), val(meta), val(INS_SIZE), val(MEAN_DEPTH), val(COV_DEV), emit: qc_melt_val
-    
+
     when:
         task.ext.when == null || task.ext.when
 
@@ -136,7 +140,7 @@ process CONTAMINATION {
         def args    = task.ext.args     ?: ''
         def args2   = task.ext.args2    ?: ''
 
-        if(meta.id.size() >= 2) { 
+        if(meta.id.size() >= 2) {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
 
@@ -144,7 +148,7 @@ process CONTAMINATION {
             find_contaminant.pl --vcf $vcf --case-id ${meta.id[tumor_idx]} $args > ${meta.id[tumor_idx]}.value
             echo "--overwrite --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --contamination" > ${meta.id[tumor_idx]}.1
             paste -d " " ${meta.id[tumor_idx]}.1 ${meta.id[tumor_idx]}.value > ${meta.id[tumor_idx]}.contaminationpy
-            
+
             find_contaminant.pl --vcf $vcf --case-id ${meta.id[tumor_idx]} $args2 > ${meta.id[normal_idx]}.value
             echo "--overwrite --sample-id ${meta.id[normal_idx]} --sequencing-run ${meta.sequencing_run[normal_idx]} --assay ${params.cdm} --contamination" > ${meta.id[normal_idx]}.1
             paste -d " " ${meta.id[normal_idx]}.1 ${meta.id[normal_idx]}.value > ${meta.id[normal_idx]}.contaminationpy
@@ -169,7 +173,7 @@ process CONTAMINATION {
         }
 
     stub:
-        if(meta.id.size() >= 2) { 
+        if(meta.id.size() >= 2) {
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             """
