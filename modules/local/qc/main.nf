@@ -13,20 +13,18 @@ process QC_TO_CDM {
 
     script:
         def prefix = task.ext.prefix ?: "${meta.id}"
-        tumor_idx = 0
-        tumor_sample = meta.id[tumor_idx]
+
 
         """
-        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --subassay ${meta.diagnosis[tumor_idx]} --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
+        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --subassay ${meta.diagnosis} --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
         """
 
     stub:
         def prefix = task.ext.prefix ?: "${meta.id}"
-        tumor_idx = 0
-        tumor_sample = meta.id[tumor_idx]
+
 
         """
-        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --subassay ${meta.diagnosis[tumor_idx]} --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
+        echo "--sequencing-run ${meta.sequencing_run} --sample-type ${meta.type} --sample-id ${meta.id} --assay $params.cdm --subassay ${meta.diagnosis} --qc ${params.outdir}/${params.subdir}/QC/$qc --lims-id ${meta.clarity_sample_id}" > ${prefix}.cdmpy
         """
 }
 
