@@ -575,11 +575,12 @@ process COLLECT_QC {
 
     when:
         task.ext.when == null || task.ext.when
+        assay_type = "wgs"
 
     script:
         def prefix  = task.ext.prefix   ?: "${meta.id}"
         """
-        qc_sentieon.pl --SID  ${meta.id}_${meta.type} --type wgs  --align_metrics_file ${aln} --insert_file ${is} --dedup_metrics_file ${dedup} --metrics_file  --gcsummary_file > ${prefix}_${meta.type}.aln.QC
+        qc_sentieon_wgs.pl --SID  ${meta.id}_${meta.type} --type ${assay_type}  --align_metrics_file ${aln} --insert_file ${is} --dedup_metrics_file ${dedup} --metrics_file ${wgs}  --gcsummary_file ${gc} > ${prefix}_${meta.type}.aln.QC
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

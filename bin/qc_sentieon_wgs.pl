@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl -w
 use warnings;
 use strict;
 use Data::Dumper;
@@ -85,7 +85,7 @@ if ($type eq "wgs") {
     my ( $sum, %quartiles, $pct25_obs, $pct50_obs, $pct75_obs );
     open( HS, $metrics_file );
     while( <HS> ) {
-  
+
         if( /^\#SentieonCommandLine/ ) {
 	    <HS>;
             my $vals = <HS>;
