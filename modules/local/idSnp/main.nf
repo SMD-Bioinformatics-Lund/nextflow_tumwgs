@@ -65,7 +65,7 @@ process SNP_CHECK {
         tumor_id                    = meta.id[tumor_idx]
                     
         tumor_seq_run               = meta.sequencing_run[tumor_idx]
-        normal_seq_run               = meta.sequencing_run[normal_idx]
+        normal_seq_run              = meta.sequencing_run[normal_idx]
 
 	    normalvcf                   = vcfs[normal_idx]
 	    tumorvcf                    = vcfs[tumor_idx]
@@ -165,23 +165,20 @@ process PAIRGEN_CDM {
         normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         normal_id   = meta.id[normal_idx]
         tumor_id    = meta.id[tumor_idx]
-	    normaljson  = jsons[normal_idx]
-	    tumorjson    = jsons[tumor_idx]
-
+	    
         """
-        echo "--overwrite --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${tumorjson} " > ${meta.id[tumor_idx]}.pairgen
+        echo " --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${meta.id[tumor_idx]}.idsnp" > ${meta.id[tumor_idx]}.pairgen
 
              
-        echo "--overwrite --sample-id ${meta.id[normal_idx]} --sequencing-run ${meta.sequencing_run[normal_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${normaljson} "> ${meta.id[normal_idx]}.pairgen
+        echo "--sample-id ${meta.id[normal_idx]} --sequencing-run ${meta.sequencing_run[normal_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${meta.id[normal_idx]}.idsnp" > ${meta.id[normal_idx]}.pairgen
         """
 
       } else {
         tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         tumor_id    = meta.id[tumor_idx]
-	    tumorjson    = jsons[tumor_idx]
 
         """
-        echo "--overwrite --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${tumorjson} " > ${meta.id[tumor_idx]}.pairgen
+        echo "--sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${meta.id[tumor_idx]}.idsnp" > ${meta.id[tumor_idx]}.pairgen
         """
       }
     
@@ -193,20 +190,19 @@ process PAIRGEN_CDM {
             normal_idx  = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             normal_id   = meta.id[normal_idx]
             tumor_id    = meta.id[tumor_idx]
-	        normaljson  = jsons[normal_idx]
-	        tumorjson    = jsons[tumor_idx]
-             """
-             echo "--overwrite --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${tumorjson} " > ${meta.id[tumor_idx]}.pairgen
+	        
+            """
+            echo " --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${meta.id[tumor_idx]}.idsnp" > ${meta.id[tumor_idx]}.pairgen
+
              
-             echo "--overwrite --sample-id ${meta.id[normal_idx]} --sequencing-run ${meta.sequencing_run[normal_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${normaljson} "> ${meta.id[normal_idx]}.pairgen
+            echo "--sample-id ${meta.id[normal_idx]} --sequencing-run ${meta.sequencing_run[normal_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${meta.id[normal_idx]}.idsnp" > ${meta.id[normal_idx]}.pairgen
             """
         } else {
             tumor_idx   = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             tumor_id    = meta.id[tumor_idx]
-	        tumorjson    = jsons[tumor_idx]
-
+	        
             """
-            echo "--overwrite --sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${tumorjson} " > ${meta.id[tumor_idx]}.pairgen
+            echo "--sample-id ${meta.id[tumor_idx]} --sequencing-run ${meta.sequencing_run[tumor_idx]} --assay ${params.cdm} --id-snp ${params.outdir}/${params.subdir}/QC/${meta.id[tumor_idx]}.idsnp" > ${meta.id[tumor_idx]}.pairgen
             """
         }
 
