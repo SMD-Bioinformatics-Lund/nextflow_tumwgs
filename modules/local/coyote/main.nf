@@ -13,7 +13,7 @@ process COYOTE {
 
     script:
 
-        process_group = group
+        group_id = group.contains("-wgs") ? group : group + "-wgs"
         tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         if( meta.id.size() < 2 ) {
@@ -31,10 +31,10 @@ process COYOTE {
         sample_subpanel = params.coyote_group.split('-')[1]
 
         """
-        echo "/data/bnf/dev/saile/other/prj/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
+        echo "/data/bnf/dev/saile/other/prj/SMD_bnf/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
             --group ${coyote_Group} \\
             --subpanel ${sample_subpanel} \\
-            --id ${process_group} \\
+            --id ${group_id} \\
             --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} \\
             --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} \\
             --build 38 \\
@@ -43,18 +43,18 @@ process COYOTE {
             --cnvprofile  /access/tumwgs/cov/${tumPlot} \\
             --transloc /access/tumwgs/vcf/${fusions} \\
             --gens ${meta.id[tumor_idx]} \\
-            --gensNorm ${meta.id[normal_idx]} " > ${process_group}.coyote
+            --gensNorm ${meta.id[normal_idx]} " > ${group_id}.coyote
         """
 
     stub:
-        process_group = group
+
+        group_id = group.contains("-wgs") ? group : group + "-wgs"
         tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
         if( meta.id.size() < 2 ) {
             process_group = group + '_single'
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
         }
-
         cnvplot_idx    = importy.findIndexOf{ it =~ 'modeled.png' }
         cnvseg_idx     = importy.findIndexOf{ it =~ 'panel' }
         fusions_idx    = importy.findIndexOf{ it =~ 'fusions' }
@@ -64,11 +64,12 @@ process COYOTE {
         cnv      = importy[cnvseg_idx]
         coyote_Group = params.coyote_group.split('-')[0]
         sample_subpanel = params.coyote_group.split('-')[1]
+
         """
-        echo "/data/bnf/dev/saile/other/prj/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
+        echo "/data/bnf/dev/saile/other/prj/SMD_bnf/import_scripts/import_myeloid_to_coyote_vep_gms_dev_WGS.pl \\
             --group ${coyote_Group} \\
             --subpanel ${sample_subpanel} \\
-            --id ${process_group} \\
+            --id ${group_id} \\
             --clarity-sample-id ${meta.clarity_sample_id[tumor_idx]} \\
             --clarity-pool-id ${meta.clarity_pool_id[tumor_idx]} \\
             --build 38 \\
@@ -77,7 +78,7 @@ process COYOTE {
             --cnvprofile  /access/tumwgs/cov/${tumPlot} \\
             --transloc /access/tumwgs/vcf/${fusions} \\
             --gens ${meta.id[tumor_idx]} \\
-            --gensNorm ${meta.id[normal_idx]} " > ${process_group}.coyote
+            --gensNorm ${meta.id[normal_idx]} " > ${group_id}.coyote
         """
 }
 
@@ -96,7 +97,7 @@ process COYOTE_YAML {
 
     script:
         environment = params.dev ? 'development' : params.validation ? 'validation' : params.testing ? 'testing' : 'production'
-        process_group = group
+        process_group = group.contains("-wgs") ? group : group + "-wgs"
         tumor_idx = 0
         tumor_sample = meta.id[tumor_idx]
         tumor_reads = meta.reads[tumor_idx] ?: null
@@ -116,7 +117,7 @@ process COYOTE_YAML {
         sample_subpanel = params.coyote_group.split('-')[1]
 
         if( meta.id.size() >= 2 ) {
-            process_group = group + 'p'
+            process_group = group.contains("-wgs") ? group + "p": group + "-wgs" + "p"
             tumor_idx = meta.type.findIndexOf{ it == 'tumor' || it == 'T' }
             normal_idx = meta.type.findIndexOf{ it == 'normal' || it == 'N' }
             normal_sample = meta.id[normal_idx]
