@@ -40,3 +40,5 @@ CLAUDE.md
 TODO.md
 doc/report.md
 todo.md
+spike/*
+**/__pycache__/

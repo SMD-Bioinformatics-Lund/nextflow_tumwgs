@@ -48,6 +48,28 @@ Additionally, **germline variants** are called from the normal sample using Sent
 
 Gains and losses of genomic segments — for example, amplification of an oncogene or deletion of a tumour suppressor gene. CNVs are detected using GATK4's read-depth and allele-frequency-based method.
 
+### Loss of heterozygosity and chromosome count (tumour–normal pairs only)
+
+Every chromosome normally carries one copy from each parent. **Loss of heterozygosity (LOH)** means the tumour has lost one parent's copy in a region, either with a loss of DNA or with the remaining copy duplicated (copy-neutral LOH, which a read-depth CNV caller cannot see). LOH can uncover a mutated tumour suppressor gene and is part of several diagnostic classifications.
+
+For each tumour–normal pair, the pipeline uses **ASCAT** to count the copies of each parental chromosome copy along the genome. From that it reports:
+
+| Result | What it means |
+|---|---|
+| Tumour purity and ploidy | The share of tumour cells in the sample, and the average number of chromosome copies per tumour cell. When the tumour genome has too few changes, purity cannot be measured and is reported as such |
+| LOH regions | Region, type (with a loss, copy-neutral, or with a gain) and the share of tumour cells that carry it |
+| Chromosome count | The number of chromosomes in the tumour, counted the way a karyotype counts them: a chromosome is gained or lost only when the whole chromosome is, while changes of one arm (for example del(7q)) are listed separately. A range is given when a chromosome is on the edge |
+| Gains of part of an arm | Gains covering part of a chromosome arm (at least 5 Mb), with the share of tumour cells that carry them. They are listed, not counted |
+| High hyperdiploidy (HeH) | For acute lymphoblastic leukaemia: 51–67 chromosomes, with a check for doubled hypodiploidy, which can reach the same count. Not given for solid tumours |
+| Sample checks | Whether the sex in the data matches the sample sheet, and the share of tumour cells found in the normal sample |
+| Changes in part of the tumour | Gains and LOH present in only some tumour cells (subclonal), with an estimate of how many |
+
+Limitations:
+- Changes present in fewer than about 12–15% of tumour cells are not detected.
+- Loss of the Y chromosome is not assessed.
+- The thresholds have been compared against another tool (PURPLE) on a small set of samples but not yet validated against karyotype or FISH.
+- Results are written as files; they are not yet shown in Coyote.
+
 ### Structural Variants (SVs) and Gene Fusions
 
 Large-scale rearrangements of the genome, including translocations, large deletions, inversions, and duplications. When a rearrangement joins two genes together, it can create an oncogenic **fusion gene** (e.g., BCR-ABL1 in CML). SVs are detected using **Manta** and annotated using **SnpEff**.
@@ -116,6 +138,9 @@ Alignment to GRCh38 (Sentieon BWA-MEM)
     │                                                           │
     │  SNVs/indels         CNVs              SVs & fusions      │
     │  (5 callers)         (GATK4)           (Manta + SnpEff)   │
+    │                      LOH, ploidy,                         │
+    │                      chromosome count                     │
+    │                      (ASCAT, pairs)                       │
     └──────────────────────────────────────────────────────────┘
          │
          ▼
@@ -151,6 +176,7 @@ All results are written to the output directory specified at runtime.
 | Final SNV/indel calls | VCF | Annotated, filtered somatic variants in panel genes |
 | Germline variants | VCF | Inherited variants from normal sample (DNAscope) |
 | CNV segments | BED / VCF | Copy number gains and losses with gene annotations |
+| LOH and chromosome count | TXT / TSV / JSON | Purity, ploidy, LOH regions, gains, chromosome count, HeH verdict, sample checks (tumour–normal pairs) |
 | Fusion gene calls | VCF / TSV | Structural variants predicted to create gene fusions |
 
 ### Quality metrics
@@ -214,5 +240,5 @@ See [CHANGELOG.md](../CHANGELOG.md) for a full list of changes between pipeline 
 
 ## Contact
 
-For questions about running the pipeline or interpreting results, contact the SMD Bioinformatics team at Lund University Hospital.
+For questions about running the pipeline or interpreting results, contact the SMD Bioinformatics team at Klinisk genetik patologi och molekylär diagnostik at Region Skåne.
 For bug reports and feature requests, open an issue on the [GitHub repository](https://github.com/SMD-Bioinformatics-Lund/nextflow_tumwgs).

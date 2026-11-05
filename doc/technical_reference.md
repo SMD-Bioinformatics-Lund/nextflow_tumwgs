@@ -101,6 +101,7 @@ nextflow_tumwgs/
 │
 ├── modules/local/
 │   ├── GATK/                       # GATK4 CNV processes
+│   ├── ascat/                      # ASCAT allele-specific CN / LOH / HeH
 │   ├── deepSomatic/                # DeepSomatic variant caller
 │   ├── fastp/                      # FASTQ trimming
 │   ├── filters/                    # VCF filtering scripts
@@ -193,6 +194,7 @@ Sample count per group (1 vs 2) is still the mechanism most processes branch on 
 | PON_FILTER | Unaffected — already only references the tumor sample. |
 | Germline/somatic filtering | No matched-normal genotype subtraction is available. Somatic specificity relies entirely on the Panel of Normals (`PON_freebayes`/`PON_vardict`) plus population allele frequency filtering (`POST_ANNOTATION_FILTERS`, gnomAD `MAX_AF` vs `params.filter_freq`). Expect a higher germline/artifact carry-through than paired calling. |
 | GATK CNV | `GATKCOV_CALL_GERMLINE` (segment calling on the normal) is skipped for tumor-only groups — there is no normal to call. `GATKCOV_CALL`'s `--normal-allelic-counts` refinement is likewise omitted. Sex-specific PON (`GATK_PON_FEMALE`/`GATK_PON_MALE`) substitutes for the normal at the read-count level regardless of pairing. |
+| ASCAT (LOH/HeH) | Skipped — ASCAT needs the matched normal's heterozygous SNPs. Paired groups are also skipped (with a `[ASCAT]` warning) when the normal has no `F`/`M` sex. |
 | Manta | Runs `configManta.py --tumorBam` only (no `--normalBam`); emits `tumorSV.vcf.gz` as the sole output. The `manta_vcf_normal` channel is declared `optional: true` and is simply absent for these groups. |
 | QC (`SOMALIER_QC`) | Runs single-sample somalier extraction/relate; the pairwise contamination/pairedness comparison is skipped since there's no normal to compare against. `VERIFYBAMID2` (population-based contamination) and the ID-SNP checks (`SNP_CHECK`, `PAIRGEN_CDM`) already run per-sample and report `is_paired_sample: false`. |
 
@@ -504,6 +506,156 @@ Sex is inferred from `meta.sex` (set in input CSV or derived from alignment data
 - `tum_plot` — CNV segmentation plot
 - `bed` — CNV calls in BED format
 - `json` — Structured export for Coyote
+- `ascat_segments` — `[group, meta, purity_ploidy.tsv, segments.tsv, segments_raw.tsv]`
+- `ascat_loh_heh` — `[group, meta, loh.tsv, subclonal.tsv, gains.tsv, chrom.tsv, heh.txt]`
+- `ascat_cn_summary` — `[group, meta, cn_summary.json, arms.tsv, events.tsv]`: the standardised result, meant for reporting. Not yet consumed by `ADD_TO_DB`, `COYOTE_YAML` or `VISUALIZE`.
+
+#### ASCAT: allele-specific copy number, LOH and HeH (paired only)
+
+GATK CNV gives total copy number. ASCAT adds the copies of each parental allele, which is what loss of heterozygosity (LOH) and a karyotype-style chromosome count need. The chain fits purity and ploidy with ASCAT, checks the fit, then summarises it into LOH segments, gains, subclonal events, a chromosome count and a high hyperdiploidy (HeH) verdict, plus a standardised JSON for reporting.
+
+```
+tumor+normal CRAM ──► ASCAT_PREPARE ──► ASCAT_FIT ──────────► ASCAT_LOH_HEH
+                      alleleCounter     GC/RT correction,      LOH, gains, subclonal events,
+                      → LogR / BAF      ASPCF, runAscat,       chromosome count, HeH verdict,
+                                        both-allele check, QC  cn_summary.json (schema 1.3)
+```
+
+| Process | Script | Purpose | Resources |
+|---|---|---|---|
+| `ASCAT_PREPARE` | `bin/ascat.R prepare` | alleleCounter at the 1000G SNPs in tumor and normal → LogR/BAF | 24 CPU (one per chromosome), 64 GB; hours |
+| `ASCAT_FIT` | `bin/ascat.R fit` (+ `bin/fitlib.R`) | correction, segmentation, purity/ploidy fit, both-allele check, QC of the pair → integer and unrounded allele copies per segment | minutes |
+| `ASCAT_LOH_HEH` | `bin/cn_summary.py` (+ the `bin/cnsummary/` package) | summary of the fit (stdlib Python ≥ 3.6) | seconds |
+
+**When it runs**
+- Enabled by `params.ascat` (default `true`); container `params.ascat_container`, built from `spike/loh_ascat/ascat.def` (R ≥ 4.3, ASCAT v3 from GitHub, alleleCounter).
+- Only groups with a tumor and a normal. Sex comes from the normal's `meta.sex` (`F` → XX, `M` → XY); a group without it is skipped with a warning. Tumor-only groups are skipped (see §3.3).
+- Preparation and fit are separate processes, so a refit (other ploidy limits, or `--purity=`/`--ploidy=` in `ASCAT_FIT`'s `ext.args`) reuses the allele counts on `-resume`.
+
+**Code layout.** `bin/ascat.R` holds the ASCAT-specific steps. `bin/fitlib.R` holds what the spike's FACETS script shares with it: argument parsing, the both-allele scoring, `refit_decision`, `prefer_undoubled`, and the arithmetic of the sex check and of tumour cells in the normal. `bin/cn_summary.py` is the command line of the summary. The rules are in `bin/cnsummary/`:
+
+| Module | Contents |
+|---|---|
+| `genome.py` | GRCh38 chromosomes, centromeres, arms, PARs |
+| `tables.py` | TSV and number reading |
+| `settings.py` | every threshold: the options and the JSON `params` |
+| `segments.py` | segment loading and preparation |
+| `calls.py` | LOH, subclonal events, segmental gains |
+| `count.py` | chromosome count, range, verdict |
+| `layers.py` | arm table, events |
+| `qc.py` | purity status, sex, loss of Y, flags |
+| `summary.py` | runs the steps in order |
+| `report.py` | output files |
+
+The spike (`spike/loh_ascat/`) is the development copy of these files.
+
+##### Prepare (`bin/ascat.R prepare`)
+
+`ascat.prepareHTS` runs alleleCounter at the 1000 Genomes SNPs (`ascat_loci_prefix`, `ascat_alleles_prefix`; ~1 per 1.3 kb) in tumor and normal, one chromosome per thread (1–22, X), with mapping quality ≥ 35 and base quality ≥ 20. It writes `<T>_{tumour,normal}{LogR,BAF}.txt`: LogR is the tumor/normal depth ratio, BAF the alternative-allele fraction. The CRAMs carry no reference path and the cluster has no internet, so the FASTA reaches alleleCounter as `-r` through `additional_allelecounter_flags` (ASCAT 3.2 has no `ref.fasta`); the script stops early if neither argument exists. Sex is passed, not inferred.
+
+##### Fit (`bin/ascat.R fit`)
+
+At SNPs het in the normal, a segment with depth ratio `2^LogR` and major-allele fraction b has, at purity p and tumour ploidy ψ, `M = 2^LogR × (2(1−p) + pψ)` copies in the mixture, and per tumour cell `major = (bM − (1−p))/p`, `minor = ((1−b)M − (1−p))/p`. Fitting means choosing p and ψ.
+
+| # | Step | What it does |
+|---|---|---|
+| 1 | `ascat.loadData` | reads the four files; het SNPs are those het in the normal |
+| 2 | sex check (`sex_check`) | the normal's heterozygosity on X outside the PARs relative to the autosomes: ≥ 0.3 XX, ≤ 0.1 XY, else unclear; compared with the given sex |
+| 3 | `ascat.correctLogR` | removes LogR waves that follow GC content (`ascat_gc`) and replication timing (`ascat_rt`); `before_/after_correction_*.png` |
+| 4 | `ascat.aspcf` | joint piecewise-constant segmentation of LogR and BAF (BAF at het SNPs, mirrored above 0.5); `<T>.ASPCF.png` |
+| 5 | `ascat.runAscat` (γ = 1) | grid over purity 0.10–1.00 and ψ 1.0–5.4; score = distance of each segment's **minor** allele to a whole number, weighted by SNPs, balanced segments at 5%; lowest local minimum with ploidy in `ascat_min_ploidy`–`ascat_max_ploidy` (1.5–4.0); rounds segments to `nMajor`/`nMinor` and keeps the unrounded `nAraw`/`nBraw`; `<T>.sunrise.png`, `<T>.ASCATprofile.png` |
+| 6 | refit guard (`aberrant_fraction`) | share of autosomal het SNPs in segments more than 0.15 copies from 1+1 at ASCAT's fit. Below `ascat_min_aberrant` (0.5%, ~15 Mb): `purity_status` = `not identifiable`, no refit, the summary reports events as a share of all cells |
+| 7 | both-allele check (`allele_fit`) | same segments and grid, both alleles scored, each allele's squared distance capped at `ascat_allele_cap`² (0.15), negative copies uncapped. A point is feasible when every confident segment (≥ 200 het SNPs, ≥ 1 Mb) has both alleles ≥ −0.1 copies; the purity floor is the lowest feasible purity at ASCAT's ψ. Local minima (7 × 7 window) of the feasible points with ploidy in bounds; `prefer_undoubled` keeps the lower-ploidy minimum unless its doubling is ≥ 1.5× better |
+| 8 | refit (`refit_decision`) | `runAscat` rerun at the check's best (`rho_manual`, `psi_manual`) when ASCAT's fit is below the purity floor; or is a doubling (ploidy ≥ 1.6×) of the best without being ≥ 1.5× better; or scores ≥ 1.25× worse, with the best ≥ 1.2× better than the runner-up and purity differing by ≥ 0.05 or ploidy by ≥ 0.2. If the rerun gives no fit, ASCAT's own is kept |
+| 9 | tumour in the normal (`tin_estimate`) | the normal's allele shift towards the tumour's major allele in clearly imbalanced segments (a − b ≥ 0.5, ≥ 1 Mb), corrected for SNPs whose tumour allele ratio points the wrong way: the fraction of tumour cells in the normal |
+| 10 | `ascat.metrics`, writes | tables below, `<T>.ascat.RData` (`bc`, `out`, `ascat_fit`, `qc`) |
+
+Why steps 6–8 exist:
+- **Ploidy cap 4.0**: higher bounds let near-diploid genomes fit a doubled solution. Genomes above ploidy 4 would be forced into a wrong fit.
+- **Minor-allele scoring**:
+  - A clonal trisomy (2+1) has minor 1 at every purity, and balanced gains count only 5%, so ASCAT's purity is set by the subclonal segments.
+  - A large subclonal cnLOH can pull purity down until it reads as clonal, and the trisomies then read as 2.3 copies.
+  - Scoring both alleles lets the clonal gains set purity. The cap stops a subclonal segment from costing more the further off it is. Uncapped negative copies let a deletion bound purity from below.
+- **Feasibility**: a small clonal deletion needs a high purity, but in the distance it can be outweighed by a large subclonal change. Feasibility enforces it.
+- **Doubling**: a doubled solution scores at least as well as its undoubled one, so the lower ploidy is preferred unless the doubling is clearly better.
+- **Cap 0.15**: a larger cap lets a balanced gain in most tumour cells pull purity down again.
+- **Guard 0.5%**: flat genomes give 0–0.1%; a single clonal 30 Mb deletion gives ~1%.
+
+A manual fit (`--purity=` and `--ploidy=` in `ASCAT_FIT`'s `ext.args`) skips steps 6–8 (`fit_used` = `manual`). When ASCAT finds no fit (non-aberrant samples), purity is `NA`, `fit_used` = `none`, `purity_status` = `not identifiable`, and the process still succeeds.
+
+`purity_ploidy.tsv` holds:
+- both fits (`ascat_purity`, `ascat_ploidy`, `allele_purity`, `allele_ploidy`) and `fit_used` (`ascat` / `allele` / `manual` / `none`);
+- `purity_floor`, `aberrant_het_fraction`, `purity_status`, and a `note` saying why;
+- the QC of the pair: `sex_data`, `sex_het_ratio`, `sex_check`, `tin_fraction`, `tin_se`, `tin_n_het`.
+
+The other tables:
+- `segments_raw.tsv`: the unrounded copies per tumor cell (`nAraw`, `nBraw`) and the het SNPs per segment (`n_het`).
+- `ownfit.*`: after a refit, ASCAT's own fit is written as well.
+- `metrics.tsv`: `ascat.metrics`, i.e. noise (MAPD), GC/RT correction, segment counts, homozygous deletions, LOH fraction, `WGD`, `GI`.
+
+##### Summary (`bin/cn_summary.py`)
+
+ASCAT rounds every segment to whole copies, which hides subclonal events and can give a balanced chromosome an odd state. The summary therefore reads the unrounded segments and works in this order:
+
+| Step | What it does | Why |
+|---|---|---|
+| Rescale | Divides out the inflation of gained alleles, estimated as the median major allele − 1 of the 2+1 segments (flag above 1.1×) | An under-fitted purity makes clonal trisomies read 2.3 and look subclonal |
+| Balanced correction | A segment with equal alleles (\|a − b\| < 0.15) but an odd state becomes even (2+1 → 2+2) | Rounding artefact of a low purity fit |
+| Artefact filters | Segments with < 25% of the median het-SNP density (germline homozygosity) and the X-transposed region (chrX:88–93.5 Mb) are left out of LOH and subclonal calls | Missing heterozygosity that the normal shares is not tumour LOH |
+| LOH | Segments with minor allele 0, ≥ 1 Mb, typed LOH+loss (1+0), cnLOH (2+0) or LOH+gain (≥ 3+0); neighbours merge only with the same copy number; fraction of tumour cells = 1 − remaining minor allele | A single X in an XY sample is not LOH |
+| Subclonal events | Segments whose alleles sit between integers: subclonal cnLOH, LOH or gain, ≥ 5 Mb, with the fraction of tumour cells. Limits: 0.12 below 1 for a lost minor allele, 0.15 for a gain. A gain without allelic shift (k+k, depth only) needs ≥ 20 Mb of such gain on its chromosome | Changes in fewer than ~12–15% of tumour cells are not called; short depth-only gains are noise |
+| Segmental gains | Gains with a whole-number state above normal (e.g. 2+1) on ≥ 5 Mb that are neither an arm nor a chromosome gain; subclonal gains inside them are reported there once | A clonal gain of less than half an arm would otherwise not be reported |
+| Purity status | `ok`, `not_identifiable`, `lower_bound` (only gains, no loss or LOH: purity is only bounded below), `manual`, `no_fit` | Fractions are of tumour cells when purity is measured, otherwise of all cells |
+| Arms | Modal total copy number per arm; arms are split at the hg38 cytoband centromere region, which belongs to neither arm | Fixed rows across samples and tools |
+| Chromosome count | Karyotype rule: a chromosome is gained or lost only when both arms share the modal total, each over ≥ 50% of the arm; acrocentrics (13, 14, 15, 21, 22) use the q arm over ≥ 90% (`--whole_frac`). Arm-level changes (del(7q), +1q) are listed, not counted. A chromosome within ±0.05 of its threshold, the count before the balanced correction, or a gain whose counting depends on an unmeasured purity makes the count a range. Y is assumed present for XY | del(7q) must not count as −7 |
+| Verdict | `not_applicable` with `--heh_verdict no` (the `solid` profile); `possible_doubled_hypodiploidy` with ≥ 5 whole autosomes in 2+0; `HeH` at 51–67 chromosomes; otherwise `not_HeH` | A doubled near-haploid clone can reach an HeH-range count |
+| Events | Chromosome, arm or segment scope; a segment event is dropped when an arm/chromosome event of the same type covers ≥ 90% of it. Clonality: `clonal` ≥ 0.85 of tumour cells, `possibly_subclonal` 0.70–0.85, `subclonal` < 0.70 | Arm fractions scatter by ~0.1, so one cut-off flips labels on noise |
+
+Count classes follow the ALL modal-number groups: near-haploid 24–30, low hypodiploid 31–39, high hypodiploid 40–43, near-diploid hypodiploid 44–45, diploid 46, low hyperdiploid 47–50, high hyperdiploid 51–67, near-triploid 68–80, near-tetraploid > 80.
+
+`ASCAT_LOH_HEH`'s `ext.args` set `--whole_frac 0.9 --masked_hypo_min_loh 5 --min_loh_len 1000000 --subclonal_min_len 5000000 --heh_verdict ${params.ascat_heh_verdict}`. Every other threshold is a default in `bin/cnsummary/settings.py` and is recorded in the JSON `params`.
+
+##### Outputs (`${outdir}/${subdir}/ascat/`)
+
+| File | Content |
+|---|---|
+| `{id}.ascat.purity_ploidy.tsv` | both fits, `fit_used`, `purity_floor`, `purity_status`, QC of the pair (sex, tumour in normal) |
+| `{id}.ascat.segments.tsv`, `.segments_raw.tsv` | integer states; unrounded copies and `n_het` |
+| `{id}.ascat.ownfit.*` | after a both-allele refit: ASCAT's own fit (purity_ploidy, segments, segments_raw) |
+| `{id}.ascat.heh.txt` | human-readable summary, one item per line (long items continue on indented lines): fit, purity status and floor, sex check, tumour in normal, count (with range), gains and losses, arm-level changes, corrections, segmental gains, LOH, subclonal events, verdict |
+| `{id}.ascat.loh.tsv`, `.gains.tsv`, `.subclonal.tsv`, `.chrom.tsv` | LOH segments; segmental gains; subclonal events; per-chromosome mean copy number, LOH fraction and modal state |
+| `{id}.ascat.cn_summary.json` | standardised result, schema 1.3. Sections: `sample` (purity only when measured, `purity_status`, `purity_floor`, count and count range, `verdict_code`, sex check, tumour in normal, flags), `arms`, `events` (incl. segmental gains), `artefacts` (germline homozygosity, masked regions, balanced corrections), `params`, `conventions` |
+| `{id}.ascat.arms.tsv`, `.events.tsv` | the arm and event layers as tables |
+| `{id}.ascat.metrics.tsv` | `ascat.metrics` QC (noise, correction, segments, homozygous deletions, LOH fraction, WGD, GI) |
+| `*.png`, `{id}.ascat.RData` | ASCAT plots (profile, ASPCF, sunrise) and R objects |
+
+Field-level definitions of the JSON: `spike/loh_ascat/README.md`. The spike summarises FACETS with the same code (after `to_segments.py`), so both tools share the format.
+
+##### Parameters
+
+| Param | Default | Purpose |
+|---|---|---|
+| `ascat` | `true` | run the chain |
+| `ascat_container` | `${container_dir}/ascat.sif` | ASCAT + alleleCounter image |
+| `ascat_loci_prefix`, `ascat_alleles_prefix`, `ascat_gc`, `ascat_rt` | 1000G GRCh38 set | SNP loci/alleles, GC and replication-timing correction (see §8) |
+| `ascat_min_ploidy`, `ascat_max_ploidy` | 1.5, 4.0 | ploidy search range |
+| `ascat_allele_refit` | `true` | both-allele purity check |
+| `ascat_allele_cap` | 0.15 | cap on each allele's distance in that check |
+| `ascat_min_aberrant` | 0.005 | refit guard: below this share of het SNPs in aberrant segments, purity is not identifiable |
+| `ascat_heh_verdict` | `"yes"`; `"no"` in `solid` | report the HeH verdict (ALL only) |
+
+##### Limitations
+- All thresholds are heuristics tuned on the development pairs and checked against PURPLE on a set of AML pairs; none is validated against karyotype or FISH.
+- Changes in fewer than ~12–15% of tumour cells are missed.
+- A flat genome has no measurable purity (`not_identifiable`). PURPLE gets purity from somatic SNVs there; this chain does not. In the spike, the SNV check `snv_purity.py` can confirm a refit or supply a purity, but it needs a genome-wide somatic VCF, which the pipeline does not publish yet.
+- Loss of Y is not assessed in the pipeline (flag `y_not_assessed`). The spike measures it from Y read depth (`y_depth.py`).
+- The germline-homozygosity filter judges whole segments, so it cannot trim a low-density stretch inside a long segment.
+- Not yet reported to Coyote or Gens: `ascat_cn_summary` is emitted but unused.
+
+**Checks** (in `spike/loh_ascat/`):
+- `python3 test_cn_summary.py`: synthetic cases for the summary rules.
+- `Rscript test_ascat_qc.R`: base R; the sex check, tumour in the normal, the doubling rule, the refit decision and the both-allele check.
+- `regress.py` and `regress_fit.R`: compare every result on a collect before and after a code change.
 
 ---
 
@@ -620,6 +772,8 @@ All reference data paths are set in `nextflow.config` under `params`. When updat
 | PON CNV (male) | `params.GATK_PON_MALE` | — |
 | Gene annotations | `params.GENE_BED` | Gencode v33 protein-coding |
 | Exon coordinates | `params.EXON_BED` | Ensembl 98 + ClinVar 5 bp pad |
+| ASCAT loci / alleles | `params.ascat_loci_prefix`, `params.ascat_alleles_prefix` | 1000G GRCh38 (sarek/igenomes set), `chr` stripped |
+| ASCAT GC / replication timing | `params.ascat_gc`, `params.ascat_rt` | 1000G GRCh38 (sarek/igenomes set), `chr` stripped |
 
 ---
 
@@ -629,6 +783,7 @@ All reference data paths are set in `nextflow.config` under `params`. When updat
 |------|---------|-------|
 | Sentieon | 202308.03 / 202503 | Alignment, dedup, BQSR, QC, TNscope, DNAscope |
 | GATK | 4.1.9.0 / 4.2.x | CNV calling |
+| ASCAT + alleleCounter | v3 (GitHub) | Allele-specific CN, LOH, HeH (`ascat.sif`) |
 | Ensembl VEP | 113.0 | SNV annotation |
 | DeepSomatic | 1.9.0 | SNV calling |
 | Manta | latest stable | SV calling |
@@ -666,6 +821,19 @@ All tools run inside a Singularity container (`tumwgs_container.sif`). Software 
 │   ├── {id}.cnv.bed                # CNV segments (BED)
 │   ├── {id}.cnv.vcf                # CNV in VCF format
 │   └── {id}.cnv.json               # Structured CNV for Coyote
+├── ascat/                          # paired groups only; {id} = tumor id
+│   ├── {id}.ascat.purity_ploidy.tsv
+│   ├── {id}.ascat.segments.tsv     # nMajor/nMinor per segment (segments_raw.tsv: unrounded)
+│   ├── {id}.ascat.ownfit.*         # after a both-allele refit: ASCAT's own fit
+│   ├── {id}.ascat.loh.tsv          # LOH segments >= 1 Mb, typed, with tumor-cell fraction
+│   ├── {id}.ascat.gains.tsv        # segmental gains >= 5 Mb (part of an arm)
+│   ├── {id}.ascat.subclonal.tsv    # subclonal cnLOH / LOH / gains >= 5 Mb
+│   ├── {id}.ascat.chrom.tsv        # per-chromosome mean CN, LOH fraction, modal state
+│   ├── {id}.ascat.heh.txt          # chromosome count + HeH verdict
+│   ├── {id}.ascat.cn_summary.json  # standardised summary (schema 1.3): sample, arms, events, artefacts, params
+│   ├── {id}.ascat.arms.tsv         # fixed per-arm table (1p..Xq): state, class, LOH fraction
+│   ├── {id}.ascat.events.tsv       # reportable events: chromosome / arm / segment scope, clonality, cell fractions
+│   └── *.png, {id}.ascat.RData     # ASCAT plots (incl. sunrise), R objects
 ├── sv/
 │   ├── {id}.fusions.vcf            # Fusion gene calls
 │   └── {id}.sv.annotated.vcf       # All annotated SVs
