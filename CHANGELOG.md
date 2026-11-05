@@ -5,16 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Somatic_whole_genome_sequencing_pipeline-v3.0.0
+### v3.0.0
 
-    - Features
-    	- Added a new dsl2 structure similar to Somatic Panel Pipeline
-    	- Added the version information for all the process and softwares
-    	- Added the common workflow entry point "SWGP" in order to aactivate the somtic pipeline workflow
-    	- Seperated the "Hema" and "solid" profile based on the diagnosis question
-    - Fixes
-    	- Added the Structural variants and tandem SV analysis in gene fusion identification
-    	- Fixed the new gens link for coyote
+Changes since v2.0_production.
+
+#### Features
+
+    *   DSL2 restructure aligned with Somatic Panel Pipeline; single `SWGP` entry point
+    *   Separate `hema` / `solid` profiles; configs split per subworkflow
+    *   New SNV callers: TNscope (+ML model), DeepSomatic, Pindel
+    *   Germline reporting: DNAscope -> GVCFtyper -> VEP (+ClinVar) -> mark_germlines, merged into somatic VCF for CEBPA 
+    *   BAM/CRAM input (skip alignment) via `bam_state` column
+    *   DUX4-IGH rearrangement caller (Pelops)
+    *   SV/tandem-dup based fusion detection; updated SMD/sarcoma fusion panels
+    *   QC: Somalier (sex, pairing), contamination metrics, QC export to CDM
+    *   Coyote3 import (CNV json, clarity id) and GENS v4
+    *   Software versions collected for all processes
+    *   Clinically validated with the tumwgs samples that was earlier run in the research and development project
+
+#### Updates
+
+    *   VEP 113; refreshed annotation databases and curated SNV/CNV gene lists
+    *   Masked hg38 genome build
+    *   GATK CNV tuned for NovaSeq X
+    *   Freebayes/VarDict called on dedup BAM; filters tuned for low-VAF SNVs
+
+#### Fixes
+
+    *   TNscope sharding removed (broke downstream steps)
+    *   Tumor-only fixes for Manta, Somalier, TNscope filters
+    *   Pindel tumor/normal index swap; ID-SNP pairing; QC subassay field
+    *   Coyote output/GENS link fixes
 
 ### Release date
 
