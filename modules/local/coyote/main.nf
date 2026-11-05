@@ -43,7 +43,7 @@ process COYOTE {
             --cnvprofile  /access/tumwgs/cov/${tumPlot} \\
             --transloc /access/tumwgs/vcf/${fusions} \\
             --gens ${meta.id[tumor_idx]} \\
-            --gensNorm ${meta.id[normal_idx]} " > ${group_id}.coyote
+            --gensNorm ${meta.id[normal_idx]} " > ${group_id}.coyote_wgs
         """
 
     stub:
@@ -78,7 +78,7 @@ process COYOTE {
             --cnvprofile  /access/tumwgs/cov/${tumPlot} \\
             --transloc /access/tumwgs/vcf/${fusions} \\
             --gens ${meta.id[tumor_idx]} \\
-            --gensNorm ${meta.id[normal_idx]} " > ${group_id}.coyote
+            --gensNorm ${meta.id[normal_idx]} " > ${group_id}.coyote_wgs
         """
 }
 
