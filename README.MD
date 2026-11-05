@@ -145,6 +145,7 @@ singularity_version = 3.8.0
 nextflow_version = 21.04.2
 executor = slurm
 cluster = grace
+entry = SWGP
 queue = normal
 
 [tumwgs-solid]
@@ -154,6 +155,7 @@ singularity_version = 3.8.0
 nextflow_version = 21.04.2
 executor = slurm
 cluster = grace
+entry = SWGP
 queue = normal
 
 ```
