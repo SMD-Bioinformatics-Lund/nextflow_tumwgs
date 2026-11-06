@@ -6,7 +6,7 @@ process COYOTE {
         tuple val(group), val(meta), file(vcf), file(importy)
 
     output:
-        tuple val(group), file("*.coyote"),  emit: coyote_import
+        tuple val(group), file("*.coyote_wgs"),  emit: coyote_import
 
     when:
         task.ext.when == null || task.ext.when
